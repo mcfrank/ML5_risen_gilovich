@@ -130,10 +130,11 @@ opts_chunk$set(echo=TRUE, tidy=FALSE , tidy.opts=list(width.cutoff=60) )
 
 
 ```{r, echo=FALSE}
-# make data dictionary for analysis dataset
+# read data from MM's local machine; otherwise use prepped_data.csv file online
 setwd("~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/2. Data/Prepped data")
 b = read.csv("prepped_data.csv")
 
+# make data dictionary for analysis dataset
 # build dictionary from first row of analysis dataset
 dict = b[1,]
 dict$id = "Subject ID within site; starts at 1 for each site"
