@@ -1,0 +1,21 @@
+\begin{thebibliography}{2}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Mathur and VanderWeele(2017)]{mathur_rrr}
+MB~Mathur and TJ~VanderWeele.
+\newblock New statistical metrics for multisite replications.
+\newblock 2017.
+\newblock Preprint retrieved from https://osf.io/w89s5/.
+
+\bibitem[R{\"u}cker and Schumacher(2008)]{rucker}
+Gerta R{\"u}cker and Martin Schumacher.
+\newblock Simpson's {P}aradox visualized: the example of the rosiglitazone
+  meta-analysis.
+\newblock \emph{BMC Medical Research Methodology}, 8\penalty0 (1):\penalty0 34,
+  2008.
+
+\end{thebibliography}
