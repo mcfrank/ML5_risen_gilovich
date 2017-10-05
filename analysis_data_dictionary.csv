@@ -24,3 +24,4 @@
 "site.main.lo","Numeric for main effect estimate CI lower bound within site from OLS (computed by data prep script)"
 "site.main.hi","Numeric for main effect estimate CI lower bound within site from OLS (computed by data prep script)"
 "is.mturk","Indicator for whether site was MTurk (1) or any university, with similar or dissimilar collapsed (0)"
+"SAT","Numeric for median SAT score of site (NA if foreign or MTurk)"

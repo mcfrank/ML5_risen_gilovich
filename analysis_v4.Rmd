@@ -96,6 +96,8 @@ Rules:
 
 "Given that we'll have 11 of these, I'd like to keep them as concise as possible. I definitely want to avoid having each paper discuss the motivation for the overall project (e.g., the idea of compare a reviewed protocol to the original one, the lack of full vetting/acceptance of the RP:P protocols, the drawbacks of the one-off RP:P approach relative to this more RRR-like approach, etc.). Those general issues should appear only in the main overview paper so that we don't have 11 papers making the same points. My hope would be to have the finding-specific papers keep the introduction really short, perhaps only a couple of paragraphs. The method and results should be complete enough to convey the study procedures and results fully. Perhaps it would work to refer readers to the OSF project page and the original RP:P materials for details of the original RP:P protocol, with the ML5 papers thoroughly describing the differences between the protocols and the characteristics of the new sample and testing. So, keep the intro and discussions sections for these individual finding paper short (no need for extensive theorizing or overviews) and make the method/results complete enough."
 
+* Say "original" and "updated" protocol (not "endorsed" / "non-endorsed")
+
 
 # Abstract
 
@@ -122,7 +124,7 @@ Rules:
   
     \item Endorsed vs. non-endorsed protocol manipulation
     
-    \item Details of protocol requirements for in-person sites
+    \item Details of protocol requirements for in-person sites (prior tasks; solitude requirements)
     
     \item Table 1: Site characteristics, protocol details, and sample sizes (per Google Drive)
   
@@ -293,7 +295,9 @@ dict$site.main.est = "Numeric for main effect estimate within site from OLS (com
 dict$site.main.lo = "Numeric for main effect estimate CI lower bound within site from OLS (computed by data prep script)"
 dict$site.main.hi = "Numeric for main effect estimate CI lower bound within site from OLS (computed by data prep script)"
 dict$site.main.SE = "Numeric for SE for main effect estimate within site from OLS (computed by data prep script)"
+dict$SAT = "Numeric for median SAT score of site (NA if foreign or MTurk)"
 
+setwd("~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/3. Analysis/R code/ML5_risen_gilovich")
 write.csv( t( dict[ , -c(1:2) ] ), "analysis_data_dictionary.csv" )
 ```
 
@@ -657,6 +661,21 @@ kable( data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval ) 
 
 As a sanity check, work in the "statistical consistency" sections below demonstrates that meta-analytic counterparts to these observation-level models yield nearly identical results. 
 
+
+## Model 2: Moderation by median SAT score
+
+We treated university sites' median total SAT scores (estimated for 2018) as a proxy for similarity to the site of the original study (Cornell), assuming that universities with higher SAT scores are more similar to Cornell (median SAT: 2134). Universities outside the US and MTurk were given missing values for SAT score. Model 2 assesses whether median SAT score moderates the effect of interest. 
+
+```{r}
+# center and scale SAT
+b$SATc = ( b$SAT - mean(b$SAT, na.rm=TRUE) ) / sd(b$SAT, na.rm=TRUE)
+
+m.sat = lmer( lkl ~ tempt * load * SATc + (tempt * load | site), data = b )
+
+summary(m.sat)
+```
+
+This analysis does not support moderation of either the main effect or the interaction by median SAT score. 
 
 ## Refitting original ANOVA model
 
