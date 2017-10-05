@@ -24,7 +24,7 @@ library(dplyr)
 First manually add the `had.read` and `load` variables:
 
 ```{r}
-source( "~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/3. Analysis/R code/data_prep_functions.R" )
+source("~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/3. Analysis/R code/ML5_risen_gilovich/data_prep_functions.R")
 
 setwd("~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/2. Data/Raw data/Brigham Young")
 d = read.csv("raw_byu.csv", header=TRUE)
@@ -102,7 +102,6 @@ Automatic data prep:
 start.path = "~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/2. Data/Raw data/Brigham Young/manualprep_byu.csv"
 end.path = "~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/2. Data/Prepped data"
 
-source( "~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/3. Analysis/R code/data_prep_functions.R" )
 prep_site_data( start.path = start.path, end.path = end.path, 
                       lkl.names = c("lkl1", "lkl2",
                                     "lkl3", "lkl4"),
@@ -124,7 +123,6 @@ prep_site_data( start.path = start.path, end.path = end.path,
 
 First manually exclude 7 subjects who may have completed the experiment twice (note: these 7 are on top of any "bad subjects" excluded by the prep script):
 ```{r}
-source( "~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/3. Analysis/R code/data_prep_functions.R" )
 
 setwd("~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/2. Data/Raw data/Eotvos Lorand")
 d = read.csv("raw_eotvos.csv")
@@ -405,6 +403,19 @@ names(b)[ names(b) == ".group" ] = "group"
 # add a few cols
 b$is.mturk = 0
 b$is.mturk[ b$group=="a.mturk" ] = 1
+
+# add median SAT score for secondary analyses (estimated for 2018)
+# per discussion with Dan Simons
+# site of original study (Cornell): 2134
+# data from https://www.collegeraptor.com/college-rankings/details/MedianSAT
+b$SAT[ b$site == "Stanford" ] = 2162
+b$SAT[ b$site == "U Penn" ] = 2178 
+b$SAT[ b$site == "UCB" ] = 2092
+b$SAT[ b$site == "UVA" ] = 2032
+b$SAT[ b$site == "RHIT" ] = 1951
+b$SAT[ b$site == "BYU" ] = 1943
+b$SAT[ b$site %in% c( "MTurk", "Eotvos", "KUL", "PUC" ) ] = NA  # foreign or online sites
+
 
 # write data
 write.csv(b, "prepped_data.csv")
