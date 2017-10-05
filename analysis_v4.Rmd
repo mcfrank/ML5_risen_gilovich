@@ -391,7 +391,6 @@ pval = as.numeric( c( pvals.m1["tempt"],
            ) )
 pval = round(pval, 2)
 
-# bookmark
 m1.res = data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval )
 kable( m1.res )
 ````
@@ -520,14 +519,16 @@ The original study's Experiment 6 reported (for the no-load condition only):
 
 ```{r}
 # effect sizes of original
-yi.orig = 2.93 - 1.90
+yi.orig.main = 2.93 - 1.90
 var.mean0 = 1.42^2 / 30
 var.mean1 = 2.16^2 / 30
-vyi.orig = var.mean0 + var.mean1
+vyi.orig.main = var.mean0 + var.mean1
 
 # sanity check: try to reproduce t-stat in original paper
-yi.orig / sqrt( vyi.orig )
+( SMD.orig.main = yi.orig.main / sqrt( vyi.orig.main ) )
 # matches their t= 2.19 (pg 302, column 2)
+
+# 
 ```
 
 We next estimate the mean and heterogeneity of the site-specific effects among the replications using a mixed model similar to Model 1, except using only similar sites (not MTurk). Note that since these analyses only use the 4 similar sites, heterogeneity estimation is likely to be pretty unstable. 
@@ -545,7 +546,7 @@ SE.Mhat = sqrt(vcov(m)["tempt", "tempt"])
 Compute $P_{orig}$, i.e., the probability that the original estimate would be as extreme or more extreme than it actually was if drawn from the estimated effect distribution from the replications \citep{mathur_rrr}:
 
 ```{r}
-( p.orig.main = p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+( p.orig.main = p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
                       yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2) )
 ```
 
@@ -556,7 +557,7 @@ meta.main = rma.uni( yi = site.main.est, vi = site.main.SE^2,
                      data=first[ first$group == "b.similar", ],
                      measure="MD", method="PM" )
   
-p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
                       yr = meta.main$b, t2 = meta.main$tau2,
                       vyr = meta.main$vb )
 ```
@@ -566,7 +567,7 @@ It's a bit lower due to the lower estimated heterogeneity here.
 
 
 ```{r}
-pred = pred_int( orig.y = yi.orig, orig.vy = vyi.orig,
+pred = pred_int( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
                       rep.y = first[first$group=="b.similar",]$site.main.est,
                       rep.vy = first[first$group=="b.similar",]$site.main.SE^2)
 ```
@@ -581,12 +582,13 @@ pred = pred_int( orig.y = yi.orig, orig.vy = vyi.orig,
 
 ```{r}
 # interaction is the "difference in differences"
-yi.orig = ( 5.27 - 2.70 ) - ( 2.93 - 1.90 )
-vyi.orig = ( 1.42^2 / 30 ) + ( 2.16^2 / 30 ) + ( 2.17^2 / 30 ) + ( 2.36^2 / 30 )
+yi.orig.int = ( 5.27 - 2.70 ) - ( 2.93 - 1.90 )
+vyi.orig.int = ( 1.42^2 / 30 ) + ( 2.16^2 / 30 ) + ( 2.17^2 / 30 ) + ( 2.36^2 / 30 )
 # just add the variances that contribute to the linear combo
 
 # sanity check: reproduce original paper's F-stat
-( yi.orig / sqrt( vyi.orig ) )^2  # square a t-stat
+SMD.orig.int = yi.orig.int / sqrt( vyi.orig.int )  
+SMD.orig.int^2  # square a t-stat
 # appears within rounding error (reported: F = 4.15)
 ```
 
@@ -602,7 +604,7 @@ SE.Mhat = sqrt(vcov(m)["tempt:load", "tempt:load"])
 Compute $P_{orig}$:
 
 ```{r}
-p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
                       yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2)
 ```
 
@@ -613,14 +615,14 @@ meta.int = rma.uni( yi = site.int.est, vi = site.int.SE^2,
                      data=first[ first$group == "b.similar", ],
                      measure="MD", method="PM" )
 
-p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
                       yr = meta.int$b, t2 = meta.int$tau2,
                       vyr = meta.int$vb )
 ```
 
 
 ```{r}
-pred = pred_int( orig.y = yi.orig, orig.vy = vyi.orig,
+pred = pred_int( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
                       rep.y = first[first$group=="b.similar",]$site.int.est,
                       rep.vy = first[first$group=="b.similar",]$site.int.SE^2)
 ```
@@ -630,12 +632,6 @@ pred = pred_int( orig.y = yi.orig, orig.vy = vyi.orig,
 ## Statistical consistency of main effect estimates between original and replications (all university sites)
 
 We now consider consistency of the original study with all university replications. This allows for more precise estimation of heterogeneity. 
-
-```{r}
-# effect sizes of original
-yi.orig = 2.93 - 1.90
-vyi.orig = (1.42^2 + 2.16^2)/2  # within-study variance of the difference
-```
 
 Fit a mixed model excluding only MTurk:
 ```{r}
@@ -650,7 +646,7 @@ SE.Mhat = sqrt(vcov(m)["tempt", "tempt"])
 Compute $P_{orig}$:
 
 ```{r}
-p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
                       yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2)
 ```
 
@@ -661,7 +657,7 @@ meta.int = rma.uni( yi = site.main.est, vi = site.main.SE^2,
                      data=first[ ! first$is.mturk, ],
                      measure="MD", method="PM" )
 
-p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
                       yr = meta.main$b, t2 = meta.main$tau2,
                       vyr = meta.main$vb )
 ```
@@ -671,7 +667,7 @@ The estimated main effect and heterogeneity in similar sites was $\widehat{M}=$ 
 
 Another sanity check: Do these results, suggestive of good consistency, agree with prediction intervals? They should because there is basically zero heterogeneity. 
 ```{r}
-pred = pred_int( orig.y = yi.orig, orig.vy = vyi.orig,
+pred = pred_int( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
                       rep.y = first[ ! first$is.mturk, ]$site.main.est,
                       rep.vy = first[ ! first$is.mturk, ]$site.main.SE^2)
 ```
@@ -681,14 +677,6 @@ pred = pred_int( orig.y = yi.orig, orig.vy = vyi.orig,
 
 ## Statistical consistency of interaction estimates between original and replications (all university sites)
 
-
-
-```{r}
-# interaction is the "difference in differences"
-yi.orig = ( 5.27 - 2.70 ) - ( 2.93 - 1.90 )
-vyi.orig = ( 1.42^2 / 30 ) + ( 2.16^2 / 30 ) + ( 2.17^2 / 30 ) + ( 2.36^2 / 30 )
-# just add the variances that contribute to the linear combo
-```
 
 We again estimate the mean and heterogeneity of the site-specific effects among the replications using the same mixed model (among only similar sites) that we fit above. 
 
@@ -702,7 +690,7 @@ SE.Mhat = sqrt(vcov(m)["tempt:load", "tempt:load"])
 Compute $P_{orig}$:
 
 ```{r}
-( p.orig.int = p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+( p.orig.int = p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
                       yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2) )
 ```
 
@@ -713,7 +701,7 @@ meta.int = rma.uni( yi = site.int.est, vi = site.int.SE^2,
                      data=first[ ! first$is.mturk, ],
                      measure="MD", method="PM" )
 
-p_orig( orig.y = yi.orig, orig.vy = vyi.orig,
+p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
                       yr = meta.int$b, t2 = meta.int$tau2,
                       vyr = meta.int$vb )
 ```
@@ -724,7 +712,7 @@ Sanity check: Do these relatively poor consistency results agree with prediction
 
 \textbf{Sanity check:} Do these poor consistency results agree with prediction intervals? 
 ```{r}
-pred = pred_int( orig.y = yi.orig, orig.vy = vyi.orig,
+pred = pred_int( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
                       rep.y = first[ ! first$is.mturk, ]$site.int.est,
                       rep.vy = first[ ! first$is.mturk, ]$site.int.SE^2)
 ```
@@ -868,13 +856,67 @@ Rules:
 
 # Introduction
 
-\begin{itemize}
+\citet{risen} examined the existence and mechanisms of the belief that "tempting fate" is punished with ironic bad outcomes. They hypothesized, for example, that students believe that they are more likely to be called on in class to answer a question about the assigned reading if they had not done the reading (and thus had "tempted fate") versus if they had come to class prepared (and thus had not "tempted fate"). This form of irrational thinking was hypothesized to originate from "System 1" processes that use potentially error-prone heuristics to render fast, effortless judgments. In contrast, alternative "System 2" cognitive processes, which rely on slow, deliberative thinking, are thought to sometimes override System 1’s heuristic judgments (CITE). Thus, \citet{risen} additionally hypothesized that System 2 processes can act to suppress irrational aversion to tempting fate, and thus that under a cognitive load manipulation designed to preoccupy System 2 resources, the effect of tempting fate on subjects' perceived likelihood of a bad outcome would be magnified. That is, they hypothesized a positive statistical interaction between cognitive load and tempting fate on perceived likelihood of a bad outcome. 
 
-\item RPP results
+\citet{risen}'s Study 6, the target of replication, used a between-subjects factorial design to assess this possibility by manipulating the behavior of a character in a scenario (a student who had either tempted fate by not doing the assigned reading or who had not tempted fate) as well as the presence or absence of cognitive load on subjects. Subjects assigned to complete the task without cognitive load simply read the scenario and then judged the likelihood of being called on in class. Subjects assigned to complete the task under cognitive load were required to count backwards by 3s from a large number while reading the scenario, after which they provided the likelihood judgment. This study provided evidence for both a main effect (standardized mean difference [SMD] = `r round( SMD.orig.main, 2 )`, 95\% CI: XX, XX, p = XX)\footnote{Approximate effect sizes recomputed from rounded values in \citep{risen}.} and the target interaction effect (standardized mean difference [SMD] = `r round( SMD.orig.main, 2 )`, 95\% CI: (XX, XX), p = XX). 
 
-\item ML3 results
 
-\end{itemize}
+```{r, echo = FALSE}
+# get effect sizes from RPP data
+setwd("~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/3. Analysis/R code/ML5_risen_gilovich")
+
+rpp = read.table("data_prepped_rpp.txt")
+rpp$tempt = ifelse( rpp$Had.read == 1, 0, 1 )
+
+rpp = rpp[ ( as.numeric( rpp$End.num ) <= 561 | is.na( rpp$End.num) ) & 
+             ( as.numeric( rpp$Effort ) != 0 | is.na(rpp$Effort) ), ]
+
+# reprduce - works :)
+# summary(aov(Likelihood ~ Load * tempt, data = rpp))
+
+#dim(rpp)  # should be 226
+
+means = aggregate( Likelihood ~ tempt, data = rpp[ rpp$Load == 0, ], mean)
+vars = aggregate( Likelihood ~ tempt, data = rpp[ rpp$Load == 0, ], var)
+ns = aggregate( Likelihood ~ tempt, data = rpp[ rpp$Load == 0, ], length)
+
+SMD.rpp.main = ( means[2,2] - means[1,2] ) / sqrt( vars[2,2] / ns[2,2] + vars[1,2] / ns[1,2] )
+2 * (1 - pnorm(SMD.rpp.main))
+
+
+
+# means = aggregate( Likelihood ~ tempt + Load, data = rpp, mean)
+# SEs = aggregate( Likelihood ~ tempt + Load, data = rpp, function(x) sqrt( var(x) / length(x) ) )
+
+# # arguments are sample means, SDs, and 
+# SMD = function( L0.T1, L0.T0, L1.T0, L1.T1,
+#                 L0.T1.SD, L0.T0.SD, L1.T0.SD, L1.T1.SD,
+#                 L0.T1.n, L0.T0.n, L1.T0.n, L1.T1.n ) {
+#   
+#   # main effect SMD
+#   
+#   aggregate( b$lkl )
+#   
+#   SMD.main = 
+#   SMD.main.var = ( L0.T1^2 / L0.T1.n ) + ( L0.T0^2 / L0.T0.n )
+# 
+#   # interaction effect SMD
+#   SMD.int = ( L1.T1 - L1.T0 ) - 
+#   
+# }
+
+# yi.rpp.main = means$Likelihood[ means$tempt == 1 & means$Load == 0 ] - means$Likelihood[ means$tempt == 0 & means$Load == 0 ]
+# 
+# vyi.rpp.main = SEs$Likelihood[ means$tempt == 1 & means$Load == 0 ]^2 + SEs$Likelihood[ means$tempt == 0 & means$Load == 0 ]^2
+# 
+# SMD.rpp.main = yi.rpp.main / sqrt(vyi.rpp.main)
+# 
+# crit = qnorm(0.975)
+# 
+# pval = 2 * ( 1 - pnorm( SMD.rpp.main / sqrt(vyi.rpp.main) ) )
+```
+
+\citet{my_rpp_writeup} previously attempted to replicate this study as part of a large-scale replication effort \citep{rpp}, finding little evidence for either a main effect (standardized mean difference [SMD] = `r round(SMD.rpp.main, 2)`, F(1,222) = 0.50, p = 0.48) or the target interaction (SMD = XXX, F(1,222) = 0.002, p = 0.96). However, prior to the collection of replication data, the authors of the original study expressed concerns about the replication protocol. Specifically, the replication was implemented on the crowdsourcing website Amazon Mechanical Turk, a setting that could compromise the cognitive load manipulation if subjects were already multitasking or were distracted. Additionally, the authors felt that the experimental scenario regarding being unprepared to answer questions in class may be less personally salient to subjects not enrolled in an elite university similar to Cornell, where the original study was conducted. \hl{Talk about ML2 results.} Thus, the present multisite replication project aimed to: (1) reassess replicability of \citep{risen} using an updated protocol designed in collaboration with Risen and Gilovich to mitigate potential problems with the previous replication protocol; and (2) formally assess the effect of the updated protocol by comparing its results to newly collected results under the previous replication protocol. 
 
 
 
