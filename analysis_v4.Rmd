@@ -29,197 +29,6 @@ output:
 bibliography: refs_ml5.bib
 ---
 
-\doublespacing
-
-\begin{center}
-\textbf{ \LARGE{Challenges in replicating Risen \& Gilovich (2008):} } \\ \vspace{5mm}
-\textbf{ \LARGE{a registered multisite replication} }
-\vspace{10mm}
-\end{center}
-
-\doublespacing
-
-\vspace{10mm}
-\begin{center}
-\large{ \emph{ Maya B. Mathur$^{1, 2\ast}$ and FRIENDS$^{1,3}$ } }
-\end{center}
-
-\vspace{20mm}
-
-\small{$^{1}$ Department of Biostatistics, Harvard T. H. Chan School of Public Health, Boston, MA, USA}
-
-\small{$^{2}$Quantitative Sciences Unit, Stanford University, Palo Alto, CA, USA}
-
-\small{$^{3}$Department of Epidemiology, Harvard T. H. Chan School of Public Health, Boston, MA, USA}
-
-
-\vspace{20mm}
-\begin{singlespacing} 
-\small{$\ast$: Corresponding author:
-
-mmathur@stanford.edu
-
-Quantitative Sciences Unit (c/o Inna Sayfer)
-
-1070 Arastradero Road
-
-Palo Alto, CA
-
-94305
-
-}
-\end{singlespacing}
-
-\vspace{15mm}
-
-
-
-\newpage
-
-
-# Notes to self
-
-Ask Charlie:
-
-\begin{itemize}
-
-\item ML3 results?
-
-\item Share results with Jane Risen?
-
-\item Anything to do before giving final draft to coauthors?
-
-\end{itemize}
-
-
-Rules:
-
-"Given that we'll have 11 of these, I'd like to keep them as concise as possible. I definitely want to avoid having each paper discuss the motivation for the overall project (e.g., the idea of compare a reviewed protocol to the original one, the lack of full vetting/acceptance of the RP:P protocols, the drawbacks of the one-off RP:P approach relative to this more RRR-like approach, etc.). Those general issues should appear only in the main overview paper so that we don't have 11 papers making the same points. My hope would be to have the finding-specific papers keep the introduction really short, perhaps only a couple of paragraphs. The method and results should be complete enough to convey the study procedures and results fully. Perhaps it would work to refer readers to the OSF project page and the original RP:P materials for details of the original RP:P protocol, with the ML5 papers thoroughly describing the differences between the protocols and the characteristics of the new sample and testing. So, keep the intro and discussions sections for these individual finding paper short (no need for extensive theorizing or overviews) and make the method/results complete enough."
-
-* Say "original" and "updated" protocol (not "endorsed" / "non-endorsed")
-
-
-# Abstract
-
-
-# Introduction
-
-\begin{itemize}
-
-\item RPP results
-
-\item ML3 results
-
-\end{itemize}
-
-
-
-# Methods
-
-\begin{itemize}
-
-\item{ Design
-
-  \begin{itemize}
-  
-    \item Endorsed vs. non-endorsed protocol manipulation
-    
-    \item Details of protocol requirements for in-person sites (prior tasks; solitude requirements)
-    
-    \item Table 1: Site characteristics, protocol details, and sample sizes (per Google Drive)
-  
-  \end{itemize}
-  
-}
-
-\item{ Analysis
-
-  \begin{itemize}
-  
-    \item Preregistration and sample size determination (mention approx. power)
-    
-    \item Primary analyses aimed to assess: (1) the target effect (interaction) using only "similar" sites to most closely approximate the author's endorsement requirements; (2) whether the target effect was different in the RPP protocol vs. the similar sites. 
-    
-    \item Secondary analyses aimed to assess: (1) both of the above but also including all university sites; (2) replicability of main effect; (3) statistical consistency of original with replications; (4) differences in manipulation efficacy between MTurk and universities. 
-  
-  \end{itemize}
-  
-}
-
-\end{itemize}
-
-
-
-# Results
-
-\begin{itemize}
-
-    \item{ Minimal descriptive stats
-  
-    \begin{itemize}
-      
-      \item Fig 1 = 3 interaction plots (MTurk, similar, all universities)
-    
-    \end{itemize}
-  
-  }
-  
-  
-  
-  \item{Results for target interaction effect
-  
-    \begin{itemize}
-      
-      \item No evidence to support target effect in similar sites
-      
-      \item Same when considering all universities
-      
-      \item No evidence for differences in target effect between RPP protocol and endorsed protocol
-    
-    \end{itemize}
-  
-  }
-  
-   \item{Results for target interaction effect
-  
-    \begin{itemize}
-      
-      \item No evidence to support target effect in similar sites (Fig 2: forest plot for interaction)
-      
-      \item Directly compare effect size to original
-      
-      \item Same when considering all universities
-      
-      \item No evidence for differences in target effect between RPP protocol and endorsed protocol
-      
-      \item Per post hoc analyses, these results provide some evidence for statistical inconsistency of original with replications. 
-    
-    \end{itemize}
-  
-  }
-  
-    \item{Results for main effect
-  
-    \begin{itemize}
-      
-      \item No evidence to support main effect in similar sites (Fig 3: forest plot for main effect)
-      
-      \item Directly compare effect size to original
-      
-      \item Same when considering all universities
-      
-      \item No evidence for differences in between RPP protocol and endorsed protocol
-      
-      \item Per post hoc analyses, these results weakly suggest statistical inconsistency with original, even though effect size is way smaller. 
-    
-    \end{itemize}
-  
-  }
-  
-\end{itemize}
-
-
-# Conclusion
 
 
 \newpage
@@ -582,7 +391,9 @@ pval = as.numeric( c( pvals.m1["tempt"],
            ) )
 pval = round(pval, 2)
 
-kable( data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval ) )
+# bookmark
+m1.res = data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval )
+kable( m1.res )
 ````
 
 \textbf{Sanity check:} Instead of fitting model that includes both MTurk and similar sites with an interaction of site type, try fitting a model to only the subset of similar sites. 
@@ -656,7 +467,8 @@ pval = as.numeric( c( mturk.main.m2$pval,
            ) )
 pval = round(pval, 2)
 
-kable( data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval ) )
+m2.res = data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval )
+kable( m2.res )
 ````
 
 As a sanity check, work in the "statistical consistency" sections below demonstrates that meta-analytic counterparts to these observation-level models yield nearly identical results. 
@@ -970,5 +782,208 @@ summary( lm( ( b$importance - mean(b$importance, na.rm=TRUE) ) ~ is.mturk, data 
 summary( lm( ( b$badness - mean(b$importance, na.rm=TRUE) ) ~ is.mturk, data = b ) )
 ```
 Actually, they care more.
+
+
+
+
+\doublespacing
+
+\begin{center}
+\textbf{ \LARGE{Challenges in replicating Risen \& Gilovich (2008):} } \\ \vspace{5mm}
+\textbf{ \LARGE{a registered multisite replication} }
+\vspace{10mm}
+\end{center}
+
+\doublespacing
+
+\vspace{10mm}
+\begin{center}
+\large{ \emph{ Maya B. Mathur$^{1, 2\ast}$ and FRIENDS$^{1,3}$ } }
+\end{center}
+
+\vspace{20mm}
+
+\small{$^{1}$ Department of Biostatistics, Harvard T. H. Chan School of Public Health, Boston, MA, USA}
+
+\small{$^{2}$Quantitative Sciences Unit, Stanford University, Palo Alto, CA, USA}
+
+\small{$^{3}$Department of Epidemiology, Harvard T. H. Chan School of Public Health, Boston, MA, USA}
+
+
+\vspace{20mm}
+\begin{singlespacing} 
+\small{$\ast$: Corresponding author:
+
+mmathur@stanford.edu
+
+Quantitative Sciences Unit (c/o Inna Sayfer)
+
+1070 Arastradero Road
+
+Palo Alto, CA
+
+94305
+
+}
+\end{singlespacing}
+
+\vspace{15mm}
+
+
+
+\newpage
+
+
+# Notes to self
+
+Ask Charlie:
+
+\begin{itemize}
+
+\item ML3 results?
+
+\item Share results with Jane Risen?
+
+\item Anything to do before giving final draft to coauthors?
+
+\end{itemize}
+
+
+Rules:
+
+"Given that we'll have 11 of these, I'd like to keep them as concise as possible. I definitely want to avoid having each paper discuss the motivation for the overall project (e.g., the idea of compare a reviewed protocol to the original one, the lack of full vetting/acceptance of the RP:P protocols, the drawbacks of the one-off RP:P approach relative to this more RRR-like approach, etc.). Those general issues should appear only in the main overview paper so that we don't have 11 papers making the same points. My hope would be to have the finding-specific papers keep the introduction really short, perhaps only a couple of paragraphs. The method and results should be complete enough to convey the study procedures and results fully. Perhaps it would work to refer readers to the OSF project page and the original RP:P materials for details of the original RP:P protocol, with the ML5 papers thoroughly describing the differences between the protocols and the characteristics of the new sample and testing. So, keep the intro and discussions sections for these individual finding paper short (no need for extensive theorizing or overviews) and make the method/results complete enough."
+
+* Say "original" and "updated" protocol (not "endorsed" / "non-endorsed")
+
+
+
+
+
+
+
+\newpage
+
+# Abstract
+
+
+# Introduction
+
+\begin{itemize}
+
+\item RPP results
+
+\item ML3 results
+
+\end{itemize}
+
+
+
+# Methods
+
+\begin{itemize}
+
+\item{ Design
+
+  \begin{itemize}
+  
+    \item Endorsed vs. non-endorsed protocol manipulation
+    
+    \item Details of protocol requirements for in-person sites (prior tasks; solitude requirements)
+    
+    \item Table 1: Site characteristics, protocol details, and sample sizes (per Google Drive)
+  
+  \end{itemize}
+  
+}
+
+\item{ Analysis
+
+  \begin{itemize}
+  
+    \item Preregistration and sample size determination (mention approx. power)
+    
+    \item Primary analyses aimed to assess: (1) the target effect (interaction) using only "similar" sites to most closely approximate the author's endorsement requirements; (2) whether the target effect was different in the RPP protocol vs. the similar sites. 
+    
+    \item Secondary analyses aimed to assess: (1) both of the above but also including all university sites; (2) replicability of main effect; (3) statistical consistency of original with replications; (4) differences in manipulation efficacy between MTurk and universities. 
+  
+  \end{itemize}
+  
+}
+
+\end{itemize}
+
+
+
+# Results
+
+\begin{itemize}
+
+    \item{ Minimal descriptive stats
+  
+    \begin{itemize}
+      
+      \item Fig 1 = 3 interaction plots (MTurk, similar, all universities)
+    
+    \end{itemize}
+  
+  }
+  
+  
+  
+  \item{Results for target interaction effect
+  
+    \begin{itemize}
+      
+      \item No evidence to support target effect in similar sites
+      
+      \item Same when considering all universities
+      
+      \item No evidence for differences in target effect between RPP protocol and endorsed protocol
+    
+    \end{itemize}
+  
+  }
+  
+   \item{Results for target interaction effect
+  
+    \begin{itemize}
+      
+      \item No evidence to support target effect in similar sites (Fig 2: forest plot for interaction)
+      
+      \item Directly compare effect size to original
+      
+      \item Same when considering all universities
+      
+      \item No evidence for differences in target effect between RPP protocol and endorsed protocol
+      
+      \item Per post hoc analyses, these results provide some evidence for statistical inconsistency of original with replications. 
+    
+    \end{itemize}
+  
+  }
+  
+    \item{Results for main effect
+  
+    \begin{itemize}
+      
+      \item No evidence to support main effect in similar sites (Fig 3: forest plot for main effect)
+      
+      \item Directly compare effect size to original
+      
+      \item Same when considering all universities
+      
+      \item No evidence for differences in between RPP protocol and endorsed protocol
+      
+      \item Per post hoc analyses, these results weakly suggest statistical inconsistency with original, even though effect size is way smaller. 
+    
+    \end{itemize}
+  
+  }
+  
+\end{itemize}
+
+
+# Conclusion
+
 
 
