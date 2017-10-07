@@ -129,6 +129,8 @@ prep_site_data = function( start.path, end.path,
   CIs = confint(m)
   
   d3$site.int.est = coef(m)["tempt:load"]
+  
+  d3$site.int.pval = summary(m)$coefficients["tempt:load","Pr(>|t|)"]
  
   d3$site.int.SE = sqrt( vcov(m)["tempt:load", "tempt:load"] )
   
@@ -138,6 +140,8 @@ prep_site_data = function( start.path, end.path,
 
   ##### Add Site-Specific Main Effect and CI #####
   d3$site.main.est = coef(m)["tempt"]
+  
+  d3$site.main.pval = summary(m)$coefficients["tempt","Pr(>|t|)"]
   
   d3$site.main.SE = sqrt( vcov(m)["tempt", "tempt"] )
   

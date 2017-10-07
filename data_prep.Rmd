@@ -414,6 +414,7 @@ b$SAT[ b$site == "UCB" ] = 2092
 b$SAT[ b$site == "UVA" ] = 2032
 b$SAT[ b$site == "RHIT" ] = 1951
 b$SAT[ b$site == "BYU" ] = 1943
+b$SAT[ b$site == "URI" ] = 1182  # from their admissions website because not on College Raptor
 b$SAT[ b$site %in% c( "MTurk", "Eotvos", "KUL", "PUC" ) ] = NA  # foreign or online sites
 
 
