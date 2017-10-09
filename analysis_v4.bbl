@@ -5,6 +5,13 @@
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
+\bibitem[Epstein et~al.(1992)Epstein, Lipson, Holstein, and Huh]{epstein}
+Seymour Epstein, Abigail Lipson, Carolyn Holstein, and Eileen Huh.
+\newblock Irrational reactions to negative outcomes: evidence for two
+  conceptual systems.
+\newblock \emph{Journal of Personality and Social Psychology}, 62\penalty0
+  (2):\penalty0 328, 1992.
+
 \bibitem[Mathur and Frank(2012)]{my_rpp_writeup}
 MB~Mathur and MC~Frank.
 \newblock Replication of {"W}hy people are reluctant to tempt fat{e"} by
@@ -34,12 +41,5 @@ Jane~L Risen, Thomas Gilovich, et~al.
 \newblock Why people are reluctant to tempt fate.
 \newblock \emph{Journal of Personality and Social Psychology}, 95\penalty0
   (2):\penalty0 293, 2008.
-
-\bibitem[R{\"u}cker and Schumacher(2008)]{rucker}
-Gerta R{\"u}cker and Martin Schumacher.
-\newblock Simpson's {P}aradox visualized: the example of the rosiglitazone
-  meta-analysis.
-\newblock \emph{BMC Medical Research Methodology}, 8\penalty0 (1):\penalty0 34,
-  2008.
 
 \end{thebibliography}
