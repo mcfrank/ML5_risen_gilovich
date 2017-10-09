@@ -1,6 +1,6 @@
 ---
-title: ''
-author: ''
+title: " "
+author: " "
 header-includes:
 - \usepackage[T1]{fontenc}
 - \usepackage{microtype}
@@ -10,7 +10,6 @@ header-includes:
 - \pagestyle{fancy}
 - \fancyhead{}
 - \fancyfoot{}
-- \fancyhead[C]{ML5: Risen \& Gilovich}
 - \fancyfoot[RO,LE]{\thepage}
 - \usepackage{titlesec}
 - \usepackage{booktabs}
@@ -23,6 +22,8 @@ header-includes:
 - \usepackage{parskip}
 - \usepackage{color,soul}
 - \usepackage{caption}
+- \usepackage{palatino}
+- \fancyhead[C]{ML5: Risen \& Gilovich}
 output:
   pdf_document:
     citation_package: natbib
@@ -129,7 +130,8 @@ first = first[ order(first$group, -first$site.n), ]
 
 \begin{center}
 \textbf{ \LARGE{Failure to replicate tempting-fate effects:} } \\ \vspace{5mm}
-\textbf{ \LARGE{registered multisite replication of Risen \& Gilovich (2008)} }
+\textbf{ \LARGE{registered multisite replication of} } \\ \vspace{5mm}
+\textbf{ \LARGE{Risen \& Gilovich (2008)} }
 \vspace{10mm}
 \end{center}
 
@@ -176,17 +178,20 @@ Palo Alto, CA
 
 # Notes to self
 
-* When submitting: Separate appendix and main text; remember to submit Table 1 as separate Excel file!
+
+* Add authors: Diane-Jo is working on this
+
+* Don't forget to submit Table 1 as separate Excel file!
 
 * Ask Charlie for funding statement
 
-* Fill in ``XXX-point scale'' thing
+* Get rid of parasitic reference list at the very end
 
-* Why are forest plots cut off at the bottom??
+* Brat forest plots are cut off at the bottom - why?!?
 
-* Put sample sizes for all models and cross-check against df
+* \hl{Put sample sizes for all models and cross-check against df}
 
-* Add authors: Diane-Jo is working on this
+* After CRAN updates my package, re-install it to avoid messages
 
 
 
@@ -300,7 +305,7 @@ pval.rpp.int = 2 * ( 1 - pt( yi.rpp.int / sqrt( vyi.rpp.int ), df = 222 ) )
 
 The protocol, sample size criteria, exclusion criteria, and statistical analysis plan were preregistered\footnote{One site (BYU) was permitted to collect data prior to preregistration of the statistical analysis plan due to their time constraints; the analyst (MM) and all other authors remained blinded to this site's results until preregistration and data collection were complete.} with details publicly available (\url{https://osf.io/h5a9y/}); any departures from these plans are reported in this manuscript. We designed the updated protocol in collaboration with the original authors and editor Daniel Simons, resulting in the following changes. First, to more closely approximate the sampling frame of the original study, which was conducted on Cornell University undergraduates, we collected our primary analysis data on undergraduates at United States universities with estimated median SAT scores in at least the 90th percentile nationally, henceforth termed "similar sites". For comparison, Cornell is in approximately the 95th percentile. Second, rather than collecting data online, we collected data with subjects physically present in controlled settings with minimal distractions and reasonable isolation from other subjects. Acceptable protocols included running each subject alone in a quiet laboratory room or running multiple subjects at the same time in a larger room, but in individual cubicles to minimize social distractions. 
 
-We additionally used the previous replication protocol \citep{rpp} (``RPP'') without modification to collect a new sample on Amazon Mechanical Turk ("MTurk"). Finally, we collected secondary data in several universities located outside the United States or not meeting the SAT criterion for similarity to Cornell, henceforth termed "dissimilar sites". Data from dissimilar sites were used in secondary analyses to further increase power and assess whether, as hypothesized, site similarity in fact moderates the target effect. For sites whose subjects were not expected to speak fluent English, questionnaire materials were translated and verified through independent back-translation.
+We additionally used the previous replication protocol (\citet{rpp}, termed ``RPP'') without modification to collect a new sample on Amazon Mechanical Turk ("MTurk"). Finally, we collected secondary data in several universities located outside the United States or not meeting the SAT criterion for similarity to Cornell, henceforth termed "dissimilar sites". Data from dissimilar sites were used in secondary analyses to further increase power and assess whether, as hypothesized, site similarity in fact moderates the target effect. For sites whose subjects were not expected to speak fluent English, questionnaire materials were translated and verified through independent back-translation.
 
 Sample sizes in the similar sites were chosen to allow, in aggregate, more than 95\% power to detect an interaction effect of the size estimated in the original study. Each site additionally attempted to reach this benchmark internally, though in many cases this was not feasible. The MTurk sample size was also chosen to exceed 95\% power to detect the reported effect size. Site-level and aggregate analyses were performed by one author (MM), who was blinded to results until all sites had completed data collection; these analyses were audited for accuracy by other authors. 
 
@@ -419,7 +424,8 @@ m.main = c( NA, NA, pretty_spaces(temp$site.main.est, use.NA=TRUE), NA, round( m
 l.main = c( NA, NA, pretty_spaces(temp$site.main.lo, use.NA=TRUE), NA, round( main.sim$lo, 2 ), round( main.uni$lo, 2 ) )
 u.main = c( NA, NA, pretty_spaces(temp$site.main.hi, use.NA=TRUE), NA, round( main.sim$hi, 2 ), round( main.uni$hi, 2 ) )
  
-
+# ~~~~~ BOTH FOREST PLOTS HAVE X-AXIS CUT OFF WHEN KNITTED
+# ~~~~~~~ BUT NOT WHEN RUN INTERACTIVELY. ARGGGGGHHH
 forestplot( labeltext=tabletext.main, mean=m.main, lower=l.main, upper=u.main, 
             zero=0,
             is.summary = c(TRUE, rep(FALSE,17), TRUE, TRUE) )
@@ -451,7 +457,7 @@ forestplot( labeltext=tabletext.main, mean=m.main, lower=l.main, upper=u.main,
 ```
 
 
-Primary analyses aimed to: (1) estimate the target interaction and the main effect under the updated protocol in similar sites; and (2) asssess whether the target interaction and the main effect estimates differed between the updated protocol and the RPP protocol. To this end, we combined data from the similar sites and MTurk to fit a linear mixed model with fixed effects representing main effects of tempting fate, cognitive load, and protocol (similar sites under the updated protocol vs. MTurk). To account for correlation of observations within a site, the model also contained random intercepts by site and random slopes by site of tempting fate, cognitive load, and their interaction; in all analyses, all random effects were assumed independently and identically normal\footnote{As a planned sensitivity analysis, we also refit the same ANOVA model used in the original study, which ignores correlation of observations within sites. This analysis yielded qualitatively similar results (Appendix). We also obtained very similar results in additional sensitivity analyses in which we fit a model to only the subset of data from similar sites without the MTurk coefficient or in which we fit meta-analytic counterparts to the primary models (Appendix)}. This model allows estimation of the target effect within similar sites and within MTurk and permits formal assessment of the extent to which these effects differ (via the three-way interaction of protocol, tempting fate, and cognitive load). (Details of the model specification and interpretations for each coefficient of interest are provided in the preregistered protocol (\url{https://osf.io/h5a9y/})). 
+Primary analyses aimed to: (1) estimate the target interaction and the main effect under the updated protocol in similar sites; and (2) asssess whether the target interaction and the main effect estimates differed between the updated protocol and the RPP protocol. To this end, we combined data from the similar sites and MTurk to fit a linear mixed model with fixed effects representing main effects of tempting fate, cognitive load, and protocol (similar sites under the updated protocol vs. MTurk). To account for correlation of observations within a site, the model also contained random intercepts by site and random slopes by site of tempting fate, cognitive load, and their interaction; in all analyses, all random effects were assumed independently and identically normal\footnote{As a planned sensitivity analysis, we also refit the same ANOVA model used in the original study, which ignores correlation of observations within sites. This analysis yielded qualitatively similar results (Appendix). We also obtained very similar results in additional sensitivity analyses in which we fit a model to only the subset of data from similar sites without the MTurk coefficient or in which we fit meta-analytic counterparts to the primary model (Appendix)}. This model allows estimation of the target effect within similar sites and within MTurk and permits formal assessment of the extent to which these effects differ (via the three-way interaction of protocol, tempting fate, and cognitive load). (Details of the model specification and interpretations for each coefficient of interest are provided in the preregistered protocol (\url{https://osf.io/h5a9y/})). 
 
 
 \captionsetup[table]{labelformat=empty}
@@ -694,10 +700,8 @@ CI.bad = confint(m.bad, method = "Wald")
 ```
 
 
-In planned secondary analyses, we assessed the original authors' hypotheses regarding the previous replication failure in RPP. First, it is possible that the cognitive load manipulation could not be implemented reliably in an online setting due, for example, to competing distractions in subjects' uncontrolled environments \citep{rand}. We therefore assessed the extent to which the efficacy of the cognitive load manipulation differed between MTurk subjects and all university subjects by fitting a mixed model with a three-way interaction of tempting fate, cognitive load, and an indicator for whether a subject was recruited on MTurk or from any university. The three-way interaction estimate suggested that the magnitude of the target interaction -- that is, the strength of influence of the cognitive load manipulation on the tempting-fate effect -- was nearly identical for MTurk subjects versus university subjects (`r round( fixef(m.manip)["tempt:load:is.mturk"], 2 )` with 95% CI: `r round( CI.manip[ row.names(CI.manip) == "tempt:load:is.mturk" ], 2 )`; $p=0.95$).  
+In planned secondary analyses, we assessed the original authors' hypotheses regarding the previous replication failure in RPP. First, it is possible that the cognitive load manipulation could not be implemented reliably in an online setting due, for example, to competing distractions in subjects' uncontrolled environments \citep{rand}. We therefore assessed the extent to which the efficacy of the cognitive load manipulation differed between MTurk subjects and all university subjects by fitting a mixed model with a three-way interaction of tempting fate, cognitive load, and an indicator for whether a subject was recruited on MTurk or from any university. The three-way interaction estimate suggested that the magnitude of the target interaction -- that is, the strength of influence of the cognitive load manipulation on the tempting-fate effect -- was nearly identical for MTurk subjects versus university subjects (`r round( fixef(m.manip)["tempt:load:is.mturk"], 2 )` with 95% CI: `r round( CI.manip[ row.names(CI.manip) == "tempt:load:is.mturk" ], 2 )`; $p=$ `r round( coef(summary(m.manip))[ "tempt:load:is.mturk" , 5 ], 2 )`).  
 
-
-TEST: `r round( coef(summary(m.manip))[ "tempt:load:is.mturk" , 5 ], 2 )`
 
 ```{r, echo=FALSE}
 # code for p-values chronologically, starting with the above
@@ -711,40 +715,30 @@ TEST: `r round( coef(summary(m.manip))[ "tempt:load:is.mturk" , 5 ], 2 )`
 #`r round( coef(summary(m.hard))["is.mturk",5], 2 )`
 ```
 
-We also collected two new measures, developed through discussion with the original authors, in which we asked subjects assigned to cognitive load to assess on a \hl{XXX-point scale} the perceived effort associated with this task (\emph{``How much effort did the counting task require?''}) and its difficulty (\emph{``How difficult was the counting task?''}). These provided manipulation checks of whether the cognitive load manipulation was effortful and difficult, as intended. We used subjects\footnote{Due to an error in data collection, the new measures for perceived effort and difficulty were omitted for one site (University of California at Berkeley); thus, these subjects were excluded in these analyses.} assigned to cognitive load to fit separate linear mixed models regressing perceived effort ($n = $ `r table(b$load, !is.na(b$count.eff))[2,2]`) and perceived difficulty ($n = $ `r table(b$load, !is.na(b$count.hard))[2,2]`) on an indicator for whether a subject was recruited on MTurk or from any university. If, as hypothesized, the cognitive load manipulation was less effective on MTurk than in university settings, perceived effort or difficulty might be lower for MTurk subjects. In contrast, perceived effort of the cognitive load task was comparable for MTurk vs. university subjects ($b=$ `r round( fixef(m.effort)["is.mturk"], 2 )` with 95% CI: `r round( CI.effort[ row.names(CI.effort) == "is.mturk" ], 2 )`; $p=0.30$), as was perceived difficulty ($b=$ `r my_round( fixef(m.hard)["is.mturk"], 2 )` with 95% CI: `r round( CI.hard[ row.names(CI.hard) == "is.mturk" ], 2 )`; $p=0.24$). Ultimately, these analyses do not suggest reduced efficacy of the cognitive load manipulation when implemented online versus in person. 
+We also collected two new measures, developed through discussion with the original authors, in which we asked subjects assigned to cognitive load to assess on a 10-point scale the perceived effort associated with this task (\emph{``How much effort did the counting task require?''}) and its difficulty (\emph{``How difficult was the counting task?''}). These provided manipulation checks of whether the cognitive load manipulation was effortful and difficult, as intended. We used subjects\footnote{Due to an error in data collection, the new measures for perceived effort and difficulty were omitted for one site (University of California at Berkeley); thus, these subjects were excluded in these analyses.} assigned to cognitive load to fit separate linear mixed models regressing perceived effort ($n = $ `r table(b$load, !is.na(b$count.eff))[2,2]`) and perceived difficulty ($n = $ `r table(b$load, !is.na(b$count.hard))[2,2]`) on an indicator for whether a subject was recruited on MTurk or from any university. If, as hypothesized, the cognitive load manipulation was less effective on MTurk than in university settings, perceived effort or difficulty might be lower for MTurk subjects. In contrast, perceived effort of the cognitive load task was comparable for MTurk vs. university subjects ($b=$ `r round( fixef(m.effort)["is.mturk"], 2 )` with 95% CI: `r round( CI.effort[ row.names(CI.effort) == "is.mturk" ], 2 )`; $p=$ `r my_round( coef(summary(m.effort))["is.mturk",5], 2 )`), as was perceived difficulty ($b=$ `r my_round( fixef(m.hard)["is.mturk"], 2 )` with 95% CI: `r round( CI.hard[ row.names(CI.hard) == "is.mturk" ], 2 )`; $p=$ `r round( coef(summary(m.hard))[,5][["is.mturk"]], 2 )`). Ultimately, these analyses do not suggest reduced efficacy of the cognitive load manipulation when implemented online versus in person. 
 
-
-```{r, echo=FALSE}
-# code for the below p-values
-# runs fine interactively, but subscript error when knitted??
-
-#`r round( coef(summary(m.import))[ "groupb.similar" , 5 ], 2 )` 
-
-# `r round( coef(summary(m.import))[ "groupc.dissimilar" , 5 ], 2 )` 
-
-# `r round( coef(summary(m.bad))[ "groupb.similar" , 5 ], 2 )` 
-
-# `r round( coef(summary(m.bad))[ "groupc.dissimilar" , 5 ], 2 )` 
-```
-
-
-The original authors also speculated that the experimental scenario (regarding answering questions in class) may be personally salient to subjects in an academically competitive environment similar to the site of the original study, but may be less so for MTurk subjects or subjects in dissimilar universities. Thus, the latter subjects may respond differently. To assess this possibility, we developed new measures in collaboration with the original authors subjects which required subjects to evaluate the importance of answering questions correctly in class (\emph{``If you were a student in the scenario you just read about, how important would it be for you to answer questions correctly in class?''}) and the perceived negativity of answering incorrectly (\emph{``If you were a student in the class, how bad would you feel if you were called on by the professor, but couldn't answer the question?''}). We used subjects\footnote{These analyses again excluded subjects from UC Berkeley, which did not collect the new measures due to a data collection error.} from all types of sites, including MTurk, to fit linear mixed models regressing perceived importance ($n = $ `r sum( ! is.na( b$importance ) )`) and perceived negativity ($n = $ `r sum( ! is.na( b$badness ) )`) on site type (similar, dissimilar, or MTurk) with random intercepts by site. Contrary to prediction, MTurk subjects reported, if anything, that answering questions correctly was somewhat more important than did subjects at similar universities ($b=$ `r round( -fixef(m.import)["groupb.similar"], 2 )` with 95% CI: [`r round( -rev( CI.import[ row.names(CI.import) == "groupb.similar" ] ), 2 )`]; $p=0.07$) or at dissimilar universities ($b=$ `r round( -fixef(m.import)["groupc.dissimilar"], 2 )` with 95% CI: [`r round( -rev( CI.import[ row.names(CI.import) == "groupc.dissimilar" ] ), 2 )`]; $p=0.10$). Additionally, when asked to assess how bad it would be to answer incorrectly, MTurk subjects responded comparably to subjects at similar sites ($b=$ `r round( -fixef(m.bad)["groupb.similar"], 2 )` with 95% CI: [`r round( -rev( CI.bad[ row.names(CI.bad) == "groupb.similar" ] ), 2 )`]; $p=0.98$) and at dissimilar sites ($b=$ `r round( -fixef(m.bad)["groupc.dissimilar"], 2 )` with 95% CI: [`r my_round( -rev( CI.bad[ row.names(CI.bad) == "groupc.dissimilar" ] ), 2 )`]; $p=0.25$).
+The original authors also speculated that the experimental scenario (regarding answering questions in class) may be personally salient to subjects in an academically competitive environment similar to the site of the original study, but may be less so for MTurk subjects or subjects in dissimilar universities. Thus, the latter subjects may respond differently. To assess this possibility, we developed new measures in collaboration with the original authors subjects which required subjects to evaluate on a 10-point scale the importance of answering questions correctly in class (\emph{``If you were a student in the scenario you just read about, how important would it be for you to answer questions correctly in class?''}) and the perceived negativity of answering incorrectly (\emph{``If you were a student in the class, how bad would you feel if you were called on by the professor, but couldn't answer the question?''}). We used subjects\footnote{These analyses again excluded subjects from UC Berkeley, which did not collect the new measures due to a data collection error.} from all types of sites, including MTurk, to fit linear mixed models regressing perceived importance ($n = $ `r sum( ! is.na( b$importance ) )`) and perceived negativity ($n = $ `r sum( ! is.na( b$badness ) )`) on site type (similar, dissimilar, or MTurk) with random intercepts by site. Contrary to prediction, MTurk subjects reported, if anything, that answering questions correctly was somewhat more important than did subjects at similar universities ($b=$ `r round( -fixef(m.import)["groupb.similar"], 2 )` with 95% CI: [`r round( -rev( CI.import[ row.names(CI.import) == "groupb.similar" ] ), 2 )`]; $p=$ `r round( coef(summary(m.import))[ "groupb.similar" , 5 ], 2 )`) or at dissimilar universities ($b=$ `r round( -fixef(m.import)["groupc.dissimilar"], 2 )` with 95% CI: [`r round( -rev( CI.import[ row.names(CI.import) == "groupc.dissimilar" ] ), 2 )`]; $p=$ `r round( coef(summary(m.import))[ "groupc.dissimilar" , 5 ], 2 )` ). Additionally, when asked to assess how bad it would be to answer incorrectly, MTurk subjects responded comparably to subjects at similar sites ($b=$ `r round( -fixef(m.bad)["groupb.similar"], 2 )` with 95% CI: [`r round( -rev( CI.bad[ row.names(CI.bad) == "groupb.similar" ] ), 2 )`]; $p=$ `r round( coef(summary(m.bad))[ "groupb.similar" , 5 ], 2 )` ) and at dissimilar sites ($b=$ `r round( -fixef(m.bad)["groupc.dissimilar"], 2 )` with 95% CI: [`r my_round( -rev( CI.bad[ row.names(CI.bad) == "groupc.dissimilar" ] ), 2 )`]; $p=$ `r round( coef(summary(m.bad))[ "groupc.dissimilar" , 5 ], 2 )` ).
 
 Lastly, we assessed variation in results according to a site's similarity to Cornell, now redefining similarity using a continuous proxy (namely, a university's estimated median total SAT score in 2018) rather than the dichotomous "similar" versus "dissimilar" eligibility criterion for primary analyses. Subjects from universities outside the United States or from MTurk were excluded from this analysis, leaving an analyzed $n = `r table( is.na(b$SAT) )[["FALSE"]]`$. We assumed that universities with higher SAT scores would be most similar to Cornell (median SAT: 2134 of 2400 possible) and therefore considered a linear effect of median SAT score as a moderator of the main effects and interaction of tempting fate with cognitive load. A mixed model did not suggest that median SAT score moderated either the main effect of tempting fate ($b=$ `r my_round( fixef(m.sat)["tempt:SATc"], 2 )` for a 10-point increase in SAT score with 95% CI: `r round( CI.SAT[ row.names(CI.SAT) == "tempt:SATc" ], 2 )`; $p=$ `r round( coef(summary(m.sat))["tempt:SATc",5], 2 )`) or the target interaction ($b=$ `r my_round( fixef(m.sat)["tempt:load:SATc"], 2 )` with 95% CI: `r round( CI.SAT[ row.names(CI.SAT) == "tempt:load:SATc" ], 2 )`; $p=$ `r round( coef(summary(m.sat))["tempt:load:SATc",5], 2 )`).
 
 
 # Conclusion
 
-We used an updated replication protocol developed in collaboration with original authors to replicate \citet{risen}'s Study 6 in controlled lab settings at universities chosen for their similarity to the original site. We additionally ran replications on Amazon Mechanical Turk, as in the previous replication, and in less similar universities. Under the updated protocol in similar sites, we estimate only a negligible main effect of tempting fate (regression coefficient estimate $b=$ `r m1.res$Estimate[ m1.res$Name == "Magnitude of X main effect within similar sites" ]` with 95\% CI: `r m1.res$CI[ m1.res$Name == "Magnitude of X main effect within similar sites" ]`; $p =$ `r m1.res$pval[ m1.res$Name == "Magnitude of X main effect within similar sites" ]` vs. in the original study: $b=$ `r yi.orig.main` with 95\% CI: [`r round( orig.main.lo, 2)`, `r round( orig.main.hi, 2)`]; $p=$ `r round( pval.orig.main, 2)`) as well as a negligible target interaction between tempting fate and cognitive load ($b=$ `r m1.res$Estimate[ m1.res$Name == "Magnitude of X-L interaction within similar sites" ]` with 95\% CI: `r m1.res$CI[ m1.res$Name == "Magnitude of X-L interaction within similar sites" ]`; $p =$ `r m1.res$pval[ m1.res$Name == "Magnitude of X-L interaction within similar sites" ]` vs. in the original study: $b=$ `r yi.orig.int` with 95\% CI: [`r round( orig.int.lo, 2)`, `r round( orig.int.hi, 2)`]; $p=$ `r round( pval.orig.int, 2)`). We found no evidence to suggest that estimates of the main effect differed between data collected under the updated protocol in similar sites and data collected under the previous replication protocol on Amazon Mechanical Turk, nor did results change meaningfully when including less similar universities in analysis. Planned secondary analyses did not support proposed mechanicams of replication failure (namely, reduced effectiveness of the cognitive load manipulation on MTurk or reduced personal salience of the experimental scenario on MTurk). Post hoc analyses suggested weak evidence of statistical inconsistency between the original study and replications under the original protocol for the main effect ($P_{orig} = 0.12$) and for the target interaction ($P_{orig} = 0.08$). Ultimately, our results fail to replicate the original study and additionally fail to support proposed substantive mechanisms for the replication failure. 
+We used an updated replication protocol developed in collaboration with original authors to replicate \citet{risen}'s Study 6 in controlled lab settings at universities chosen for their similarity to the original site. We additionally conducted replications on Amazon Mechanical Turk, as in the previous replication, and in less similar universities. Under the updated protocol in similar sites, we estimate only a negligible main effect of tempting fate (regression coefficient estimate $b=$ `r m1.res$Estimate[ m1.res$Name == "Magnitude of X main effect within similar sites" ]` with 95\% CI: `r m1.res$CI[ m1.res$Name == "Magnitude of X main effect within similar sites" ]`; $p =$ `r m1.res$pval[ m1.res$Name == "Magnitude of X main effect within similar sites" ]` vs. in the original study: $b=$ `r yi.orig.main` with 95\% CI: [`r round( orig.main.lo, 2)`, `r round( orig.main.hi, 2)`]; $p=$ `r round( pval.orig.main, 2)`) as well as a negligible target interaction between tempting fate and cognitive load ($b=$ `r m1.res$Estimate[ m1.res$Name == "Magnitude of X-L interaction within similar sites" ]` with 95\% CI: `r m1.res$CI[ m1.res$Name == "Magnitude of X-L interaction within similar sites" ]`; $p =$ `r m1.res$pval[ m1.res$Name == "Magnitude of X-L interaction within similar sites" ]` vs. in the original study: $b=$ `r yi.orig.int` with 95\% CI: [`r round( orig.int.lo, 2)`, `r round( orig.int.hi, 2)`]; $p=$ `r round( pval.orig.int, 2)`). Results did not appear to differ between data collected under the updated protocol in similar sites and data collected under the previous replication protocol on Amazon Mechanical Turk, nor did they change meaningfully when including dissimilar universities in analysis. Planned secondary analyses did not support proposed mechanicams of replication failure (namely, reduced effectiveness of the cognitive load manipulation on MTurk or reduced personal salience of the experimental scenario on MTurk). Post hoc analyses suggested weak evidence of statistical inconsistency between the original study and replications under the original protocol for the main effect ($P_{orig} = 0.12$) and for the target interaction ($P_{orig} = 0.08$). Ultimately, our results fail to replicate the original study and to support proposed substantive mechanisms for the replication failure. 
 
 
 # Funding
 
 # Acknowledgments
 
+\newpage
+
+\bibliography{refs_ml5}
 
 \newpage
 
+
+\setcounter{page}{1}
 \unhidefromtoc
 
 
@@ -823,7 +817,7 @@ int_plot(b[ b$group=="a.mturk", ], ggtitle = "Mechanical Turk")
 
 
 
-## Means and SDs by site type
+## Means and standard deviations by site type
 
 
 ```{r, results='asis'}
@@ -840,7 +834,7 @@ stargazer( agg, header=FALSE, summary=FALSE,
 
 
 
-# Sanity Checks for Reported Results
+# Sensitivity Analyses for Reported Results
 
 ## Fit subset model counterpart to primary analysis model
 
@@ -902,8 +896,9 @@ The above analyses did not suggest differences in results between similar and di
 
 
 
+\newpage
 
-
+\hl{PARASITIC REFERENCE LIST - GET RID OF THIS!}
 
 
 
