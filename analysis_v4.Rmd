@@ -30,17 +30,12 @@ output:
 bibliography: refs_ml5.bib
 ---
 
-\doublespacing
 
-\begin{center}
-\textbf{ \LARGE{Online Supplement: Analysis Code} }
-\vspace{10mm}
-\end{center}
-
-\singlespacing
 
 
 ```{r, echo=FALSE, message=FALSE, warnings=FALSE}
+
+######## Housekeeping ########
 
 # note to self: do not add line breaks to this doc!
 #  will give crazy "HaHaHa" error messages, 
@@ -63,17 +58,13 @@ my_round = function(x, digits) {
   format( round( x, digits ), nsmall = digits )
 }
 # my_round( 0.2000000, 2 )
+
+# globally toggle whether code prints out
+opts_chunk$set(echo=FALSE, tidy=FALSE, tidy.opts=list(width.cutoff=60) )
+
+# TeX code to follow is used later to exclude manuscript sections from table of contents
 ```
 
-```{r, echo=FALSE}
-# turn all code output on/off
-opts_chunk$set(echo=TRUE, tidy=FALSE , tidy.opts=list(width.cutoff=60) )
-```
-
-
-```{r, echo=FALSE}
-# TeX code below used later to exclude manuscript sections from table of contents
-```
 \newcounter{oldtocdepth}
 \newcommand{\hidefromtoc}{%
   \setcounter{oldtocdepth}{\value{tocdepth}}%
@@ -85,8 +76,6 @@ opts_chunk$set(echo=TRUE, tidy=FALSE , tidy.opts=list(width.cutoff=60) )
 
 
 
-
-\tableofcontents
 
 
 
@@ -101,6 +90,7 @@ first = b[ !duplicated(b$site), ]
 first = first[ order(first$group, -first$site.n), ]
 
 # make data dictionary for analysis dataset
+# only needs to be run once in lifetime, so commented out
 # build dictionary from first row of analysis dataset
 # dict = b[1,]
 # dict$id = "Subject ID within site; starts at 1 for each site"
@@ -134,684 +124,6 @@ first = first[ order(first$group, -first$site.n), ]
 # write.csv( t( dict[ , -c(1:2) ] ), "analysis_data_dictionary.csv" )
 ```
 
-
-\newpage
-
-
-# Data Quality 
-
-```{r, results='asis'}
-# total and excluded bad subjects
-d = data.frame( site = first$site, n.excl = first$site.n.excl, n.total = first$site.n)
-
-stargazer(d, header=FALSE, summary=FALSE,
-          #column.labels = c("Site", "No. excluded subjects", "No. analyzed subjects"),
-          rownames = FALSE,
-          title="Excluded and analyzed subjects by site" )
-```
-
-
-```{r, results='asis'}
-# sample sizes by site type
-t = table( b$group )
-stargazer( as.data.frame(t), header=FALSE, summary=FALSE,
-           rownames = FALSE,
-           colnames = FALSE,
-           title = "Total analysis sample sizes by site type" )
-```
-
-We excluded subjects exactly per the preregistration and the original study protocol, resulting in `r sum( first$site.n.excl )` exclusions across all sites, including MTurk. This is `r 100 * round( sum( first$site.n.excl ) / sum( first$site.n.excl, first$site.n ), 2 )`\% of the originally collected data.
-
-
-
-# Descriptive Stats and Plots
-
-Boxplots: medians and IQRs; lines: simple means by subset. (For the same plots within each site, see the data prep PDF.) These aggregated means and SDs pool across all sites within a group (similar, dissimilar, MTurk) and do not account for clustering by site.
-
-```{r}
-##### Fn: Interaction Plot #####
-# pass the desired subset of data
-int_plot = function( dat, ggtitle ) {
-    agg = ddply( dat, .(load, tempt), summarize, val = mean(lkl, na.rm=TRUE)   )  # aggregate data for plotting happiness
-    
-  colors = c("black", "orange")
-  plot( ggplot( dat, aes(x = as.factor(load), y = lkl, color=as.factor(tempt) ) ) + geom_boxplot(width=0.5) +
-      geom_point(data = agg, aes(y = val), size=4 ) +
-      geom_line(data = agg, aes(y = val, group = tempt), lwd=2 ) +
-      scale_color_manual(values=colors) +
-      scale_y_continuous( limits=c(0,10) ) +
-      ggtitle(ggtitle) +
-      theme_bw()  + xlab("Cognitive load?") + ylab("Perceived likelihood of being called on") +
-      guides(color=guide_legend(title="Tempted fate?"))
-    )
-}
-
-##### Plot By Subset #####
-int_plot(b, ggtitle = "All sites (including MTurk)")  # all sites
-int_plot(b[ b$group=="b.similar", ], ggtitle = "Similar sites")
-int_plot(b[ b$group=="c.dissimilar", ], ggtitle = "Dissimilar sites")
-int_plot(b[ b$group=="a.mturk", ], ggtitle = "Mechanical Turk")
-```  
-
-
-
-## Means and SDs by site type
-
-```{r}
-# get effect sizes from original study for later use
-
-##### Main effect from original #####
-yi.orig.main = 2.93 - 1.90
-var.mean0 = 1.42^2 / 30
-var.mean1 = 2.16^2 / 30
-vyi.orig.main = var.mean0 + var.mean1
-
-# sanity check: try to reproduce t-stat in original paper
-SMD.orig.main = yi.orig.main / sqrt( vyi.orig.main )
-# matches their t= 2.19 (pg 302, column 2)
-
-pval.orig.main = 2 * ( 1 - pt( q = abs( SMD.orig.main ), df = 58 ) )
-orig.main.lo = yi.orig.main - qt( 0.975, df = 58 ) * sqrt(vyi.orig.main)
-orig.main.hi = yi.orig.main + qt( 0.975, df = 58 ) * sqrt(vyi.orig.main)
-
-
-
-##### Interaction effect from original #####
-# interaction is the "difference in differences"
-yi.orig.int = ( 5.27 - 2.70 ) - ( 2.93 - 1.90 )
-vyi.orig.int = ( 1.42^2 / 30 ) + ( 2.16^2 / 30 ) + ( 2.17^2 / 30 ) + ( 2.36^2 / 30 )
-# just add the variances that contribute to the linear combo by independence
-
-# sanity check: reproduce original paper's F-stat
-SMD.orig.int = yi.orig.int / sqrt( vyi.orig.int )  
-SMD.orig.int^2  # square a t-stat to get F-stat
-# appears within rounding error (reported: F = 4.15)
-
-pval.orig.int = 2 * ( 1 - pt( q = abs( SMD.orig.int ), df = 116 ) )
-orig.int.lo = yi.orig.int - qt( 0.975, df = 116 ) * sqrt(vyi.orig.int)
-orig.int.hi = yi.orig.int + qt( 0.975, df = 116 ) * sqrt(vyi.orig.int)
-```
-
-
-
-```{r, results='asis'}
-agg.means = aggregate( lkl ~ tempt + load + group, b, mean)
-agg.sds = aggregate( lkl ~ tempt + load + group, b, sd)
-
-agg = data.frame( cbind( agg.means, agg.sds$lkl) )
-names(agg)[4:5] = c("mean", "SD")
-
-stargazer( agg, header=FALSE, summary=FALSE,
-           title = "Means and SDs of perceived likelihood across all subjects
-           within each site type (naively pooling all sites)" )
-``` 
-
-\newpage
-
-## Forest plots for main effect and interaction
-
-Study-specific estimates are from OLS fit within just that site (this step was completed previously by $\texttt{data\_prep.Rmd}$). Pooled estimates are based on estimated coefficients from LMMs (see preregistered protocol for exact model specification). Throughout, we use "main effect" to refer to the main effect in the condition without cognitive load. 
-
-(Technical note: An alternative for the study-specific estimates would be to use estimates of random intercepts and random slopes by site from the LMM, but here we use subset analyses for a descriptive characterization that relaxes the across-site distributional assumptions of LMM.)
-
-```{r}
-# first, fit models that we need for forest plot's pooled estimates
-#  and subsequent analyses
-
-# prevent brat forest plot from going off page
-opts_chunk$set(echo=TRUE, tidy=TRUE, tidy.opts=list(width.cutoff=60), fig.width=10 )
-
-# Fn: calculate SE for sum of coefficients
-# b1, b2: names of the two coefficients to add
-# .mod: the lmer model object
-lin_combo = function( b1, b2, .mod ) {
-  V = vcov(.mod)
-  SE = sqrt( V[b1, b1] + V[b2, b2] + 2 * V[b1, b2] )
-  est = fixef(.mod)[b1] + fixef(.mod)[b2]
-  lo = as.numeric( est - qnorm(0.975) * SE )
-  hi = as.numeric( est + qnorm(0.975) * SE )
-  pval = ( 1 - pnorm( abs(est / SE) ) ) * 2
-  
-  return( data.frame( est, lo, hi, pval ) )
-}
-
-
-
-##### Only Similar Sites #####
-# fit Primary Model 1, to be reported in subsequent section
-# reference level for group is MTurk
-m1 = lmer( lkl ~ tempt * load * group + (tempt * load | site), data = b[ b$group != "c.dissimilar", ] )
-
-# bizarre mystery: changing order of variables in random slope specification
-#  results in convergence failure:
-# lmer( lkl ~ tempt * load * group + (load * tempt | site), data = b[ b$group != "c.dissimilar", ] )
-
-# pooled estimate and CI of main effect (similar sites)
-main.sim = lin_combo( "tempt", "tempt:groupb.similar", m1 )
-
-# pooled estimate and CI of interaction (similar sites)
-int.sim = lin_combo( "tempt:load", "tempt:load:groupb.similar", m1 )
-
-
-
-##### Combining All Universities #####
-# Model 1' in preregistered protocol
-# here, reference level is all university sites
-m2 = lmer( lkl ~ tempt * load * is.mturk + (tempt * load | site), data = b )
-
-# pooled estimate and CI of main effect (all universities)
-CI2 = confint(m2, method = "Wald")
-main.uni = data.frame( est = fixef(m2)["tempt"], lo = CI2[ "tempt", 1 ],
-                       hi = CI2[ "tempt", 2 ] )
-
-
-# pooled estimate and CI of interaction (all universities)
-int.uni = data.frame( est = fixef(m2)["tempt:load"], lo = CI2[ "tempt:load", 1 ],
-                      hi = CI2[ "tempt:load", 2 ] )
-
-# main effect in MTurk
-mturk.main.m2 = lin_combo( "tempt:is.mturk", "tempt", m2 )
-
-# interaction effect in MTurk
-mturk.int.m2 = lin_combo( "tempt:load:is.mturk", "tempt:load", m2 )
-```
-
-
-
-```{r}
-# make the forest plot
-
-# Fn: insert spacey elements in vectors for purely cosmetic forest plot reasons
-# spaces are between site types
-# "use.NA" = should we put NA instead of ""?
-pretty_spaces = function(x, use.NA = FALSE){
-  x2 = append( x, ifelse( use.NA, NA, "" ), after = 1)
-  x2 = append( x2, ifelse( use.NA, NA, "" ), after = 3)
-  x2 = append( x2, ifelse( use.NA, NA, "" ), after = 8)
-}
-
-
-# ~~~~~~~~~ CHECK DF
-temp = first[ , names(first) %in% c("site", "site.n", "site.main.est", "site.main.lo", "site.main.hi",
-                                    "site.int.est", "site.int.lo", "site.int.hi", "is.mturk", "group") ]
-temp = rbind( data.frame( site = "Original study", site.n = 120, site.main.est = yi.orig.main, site.main.lo = orig.main.lo, site.main.hi =  orig.main.hi,
-                          site.int.est = yi.orig.int, site.int.lo = orig.int.lo, site.int.hi = orig.int.hi, is.mturk = FALSE, group = "d.original"), temp )
-
-# build text "columns" of forest plot
-# NAs are for making spaces
-tabletext.main = cbind( c( "Study", "", pretty_spaces( as.character(temp$site) ), NA, "Pooled (similar universities)", "Pooled (all universities)" ),
-                 c( "Sample size", "", pretty_spaces(temp$site.n), NA, sum(temp$site.n[temp$group=="b.similar"]),
-                    sum(temp$site.n[ ! temp$is.mturk ]) ),
-                 c( "Main effect est.", "", pretty_spaces(round( temp$site.main.est, 2 )), NA, round( main.sim$est, 2 ),
-                    round( main.uni$est, 2 ) )  
-                 )
-
-# build columns of point estimates, CI lower, and CI upper values for forest plot
-m.main = c( NA, NA, pretty_spaces(temp$site.main.est, use.NA=TRUE), NA, round( main.sim$est, 2 ), round( main.uni$est, 2 ) )
-l.main = c( NA, NA, pretty_spaces(temp$site.main.lo, use.NA=TRUE), NA, round( main.sim$lo, 2 ), round( main.uni$lo, 2 ) )
-u.main = c( NA, NA, pretty_spaces(temp$site.main.hi, use.NA=TRUE), NA, round( main.sim$hi, 2 ), round( main.uni$hi, 2 ) )
- 
-
-forestplot( labeltext=tabletext.main, mean=m.main, lower=l.main, upper=u.main, 
-            zero=0,
-            is.summary = c(TRUE, rep(FALSE,17), TRUE, TRUE) )
-```
-
-
-
-
-```{r}
-######## For interaction ########
-
-# build text "columns" of forest plot
-# NAs are for making spaces
-tabletext.int = cbind( c( "Study", "", pretty_spaces( as.character(temp$site) ), NA, "Pooled (similar universities)", "Pooled (all universities)" ),
-                 c( "Sample size", "", pretty_spaces(temp$site.n), NA, sum(temp$site.n[temp$group=="b.similar"]),
-                    sum(temp$site.n[ ! temp$is.mturk ]) ),
-                 c( "Interaction est.", "", pretty_spaces(round( temp$site.int.est, 2 )), NA, round( int.sim$est, 2 ),
-                    round( int.uni$est, 2 ) )  
-                 )
-
-# build columns of point estimates, CI lower, and CI upper values for forest plot
-m.int = c( NA, NA, pretty_spaces(temp$site.int.est, use.NA=TRUE), NA, round( int.sim$est, 2 ), round( int.uni$est, 2 ) )
-l.int = c( NA, NA, pretty_spaces(temp$site.int.lo, use.NA=TRUE), NA, round( int.sim$lo, 2 ), round( int.uni$lo, 2 ) )
-u.int = c( NA, NA, pretty_spaces(temp$site.int.hi, use.NA=TRUE), NA, round( int.sim$hi, 2 ), round( int.uni$hi, 2 ) )
- 
-
-forestplot( labeltext=tabletext.int, mean=m.int, lower=l.int, upper=u.int, 
-            zero=0,
-            is.summary = c(TRUE, rep(FALSE,17), TRUE, TRUE) )
-
-```
-
-\textbf{Sanity check:} Estimates in the forest plots seem to agree closely with the interaction plots by site type as well as interaction plots for each site ($\texttt{data\_prep.pdf}$).
-
-
-# Planned Primary Analyses
-
-## Model 1: Observation-level mixed model
-
-Model 1 is a linear mixed model excluding dissimilar sites. We use $X$ to denote tempting fate, $L$ to denote cognitive load, and $Y$ to denote perceived likelihood. 
-
-```{r}
-# see section before making forest plot for model fit
-# note that reference level for site type is MTurk
-
-# using Wald CIs because profile and boot are struggling to 
-#  converge (i.e., assume coefficient estimates are normal,
-#  which is quite reasonable at these sample sizes)
-CI = confint(m1, method="Wald")
-
-# make table
-name = c("Magnitude of X main effect within MTurk", 
-          "Magnitude of X main effect within similar sites",
-          "Effect of similar site vs. MTurk on X main effect", 
-          "Magnitude of X-L interaction within MTurk", 
-          "Magnitude of X-L interaction within similar sites",
-          "Effect of similar site vs. MTurk on X-L interaction"
-          )
-
-value = as.numeric( c( fixef(m1)["tempt"], 
-           main.sim$est, 
-           fixef(m1)["tempt:groupb.similar"],   
-           fixef(m1)["tempt:load"], 
-           int.sim$est, 
-           fixef(m1)["tempt:load:groupb.similar"]
-           ) )
-value = my_round(value, 2)
-
-lo = as.numeric( c( CI["tempt", 1], 
-           main.sim$lo, 
-           CI["tempt:groupb.similar", 1],
-           CI["tempt:load", 1], 
-           int.sim$lo, 
-           CI["tempt:load:groupb.similar", 1]
-           ) )
-lo = my_round(lo, 2)
-
-hi = as.numeric( c( CI["tempt", 2], 
-           main.sim$hi, 
-           CI["tempt:groupb.similar", 2],
-           CI["tempt:load", 2], 
-           int.sim$hi, 
-           CI["tempt:load:groupb.similar", 2]
-           ) )
-hi = my_round(hi, 2)
-
-CI.string = paste( "[", lo, ", ", hi, "]", sep="" )
-
-pvals.m1 = coef(summary(m1))[,5]
-pval = as.numeric( c( pvals.m1["tempt"], 
-           main.sim$pval, 
-           pvals.m1["tempt:groupb.similar"],
-           pvals.m1["tempt:load"], 
-           int.sim$pval, 
-           pvals.m1["tempt:load:groupb.similar"]
-           ) )
-pval = my_round(pval, 2)
-
-m1.res = data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval )
-kable( m1.res, col.names = c("", "Estimate", "95% CI", "p-value") )
-````
-
-\textbf{Sanity check:} Instead of fitting a model that includes both MTurk and similar sites with an interaction of site type, try fitting a model to only the subset of similar sites. 
-
-```{r}
-m1.temp = lmer( lkl ~ tempt * load + (tempt * load | site), data = b[ b$group == "b.similar", ] )
-CI.temp = confint( m1.temp, method = "Wald" )
-```
-
-In the primary model, the estimated main effect was `r round( main.sim$est, 2)` with 95\% CI: (`r round( main.sim$lo, 2)`, `r round( main.sim$hi, 2)`), whereas in the present subset model, it is `r round( fixef(m1.temp)["tempt"], 2)` with 95\% CI: (`r round( CI.temp[row.names(CI.temp) == "tempt", 1], 2)`, `r round( CI.temp[row.names(CI.temp) == "tempt", 2], 2)`).
-
-Also, in the primary model, the estimated interaction effect was `r round( int.sim$est, 2)` with 95\% CI: (`r round( int.sim$lo, 2)`, `r round( int.sim$hi, 2)`), whereas in the present subset model, it is `r round( fixef(m1.temp)["tempt:load"], 2)` with 95\% CI: (`r round( CI.temp[row.names(CI.temp) == "tempt:load", 1], 2)`, `r round( CI.temp[row.names(CI.temp) == "tempt:load", 2], 2)`).
-
-These results are similar.
-
-\newpage
-
-# Planned Secondary Analyses
-
-## Model 1': Observation-level mixed model, including dissimilar sites
-We refit the primary analysis model, but now including the dissimilar sites. (This model was actually already fit for the pooled estimate in the forest plots.)
-
-
-```{r}
-# make table
-name = c("Magnitude of X main effect within MTurk", 
-          "Magnitude of X main effect within university sites",
-          "Effect of university site vs. MTurk on X main effect", 
-          "Magnitude of X-L interaction within MTurk", 
-          "Magnitude of X-L interaction within university sites",
-          "Effect of university site vs. MTurk on X-L interaction"
-          )
-
-# negative ones are when coefficient is ( MTurk - uni )
-value = as.numeric( c( mturk.main.m2$est, 
-           fixef(m2)["tempt"], 
-           -fixef(m2)["tempt:is.mturk"],  
-           mturk.int.m2$est, 
-           fixef(m2)["tempt:load"], 
-           -fixef(m2)["tempt:load:is.mturk"]
-           ) )
-value = my_round(value, 2)
-
-lo = as.numeric( c( mturk.main.m2$lo, 
-           CI2[ row.names(CI2) == "tempt", 1 ], 
-           -CI2[ row.names(CI2) == "tempt:is.mturk", 1 ],
-           mturk.int.m2$lo, 
-           CI2[ row.names(CI2) == "tempt:load", 1 ], 
-           -CI2[ row.names(CI2) == "tempt:load:is.mturk", 1 ]
-           ) )
-lo = my_round(lo, 2)
-
-hi = as.numeric( c( mturk.main.m2$hi, 
-           CI2[ row.names(CI2) == "tempt", 2 ], 
-           -CI2[ row.names(CI2) == "tempt:is.mturk", 2 ],
-           mturk.int.m2$hi, 
-           CI2[ row.names(CI2) == "tempt:load", 2 ], 
-           -CI2[ row.names(CI2) == "tempt:load:is.mturk", 2 ]
-           ) )
-hi = my_round(hi, 2)
-
-CI.string = paste( "[", lo, ", ", hi, "]", sep="" )
-
-pvals.m2 = coef(summary(m2))[,5]
-pval = as.numeric( c( mturk.main.m2$pval, 
-           pvals.m2["tempt"], 
-           pvals.m2["tempt:is.mturk"],
-           mturk.int.m2$pval, 
-           pvals.m2["tempt:load"], 
-           pvals.m2["tempt:load:is.mturk"]
-           ) )
-pval = my_round(pval, 2)
-
-m2.res = data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval )
-kable( m2.res, col.names = c("", "Estimate", "95% CI", "p-value") )
-````
-
-As a sanity check, work in the "statistical consistency" sections below demonstrates that meta-analytic counterparts to these observation-level models yield nearly identical results. 
-
-
-## Model 2: Moderation by median SAT score
-
-We treated university sites' median total SAT scores (estimated for 2018) as a proxy for similarity to the site of the original study (Cornell), assuming that universities with higher SAT scores are more similar to Cornell (median SAT: 2134). Universities outside the US and MTurk were given missing values for SAT score. Model 2 assesses whether median SAT score moderates the effect of interest. 
-
-```{r}
-# center and scale SAT
-b$SATc = ( b$SAT - mean(b$SAT, na.rm=TRUE) ) / 10
-
-m.sat = lmer( lkl ~ tempt * load * SATc + (tempt * load | site), data = b )
-
-CI.SAT = confint(m.sat, method = "Wald")
-
-summary(m.sat)
-```
-
-This analysis does not support moderation of either the main effect or the interaction by median SAT score. 
-
-## Refitting original ANOVA model
-
-The original study used two-way ANOVA to test for the main effect and interaction. Per our preregistered protocol, we also reproduce this model as a secondary analysis here.
-
-```{r}
-summary( aov( lkl ~ load * tempt, data = b[ b$group == "b.similar", ] ) ) 
-```
-
-These results are qualitatively similar to what we saw in the primary model. 
-
-
-## Other planned models
-
-The above analyses did not suggest differences in results between similar and dissimilar sites. Therefore, as planned in the preregistered protocol, we did not pursue the secondary mediation models. 
-
-
-
-
-
-# Post-Hoc Analyses
-
-## Statistical consistency of main effect estimates between original and replications (similar sites only)
-
-
-The original study's Experiment 6 reported (for the no-load condition only):
-
-* $\bar{Y}_{X=0, L=0} = 1.90, SD_{Y=0, L=0} = 1.42, n=30$
-* $\bar{Y}_{X=1, L=0} = 2.93, SD_{Y=1, L=0} = 2.16, n=30$
-
-We next estimate the mean and heterogeneity of the site-specific effects among the replications using a mixed model similar to Model 1, except using only similar sites (not MTurk). Note that since these analyses only use the 4 similar sites, heterogeneity estimation is likely to be pretty unstable. 
-
-
-```{r}
-detach("package:lmerTest")
-#detach("package:nlme")
-m = lmer( lkl ~ tempt * load + (tempt * load | site), data = b[ b$group == "b.similar", ] )
-Vhat = 0.05701  # variance of random slopes of tempt
-Mhat = fixef(m)[["tempt"]]
-SE.Mhat = sqrt(vcov(m)["tempt", "tempt"])
-```
-
-Compute $P_{orig}$, i.e., the probability that the original estimate would be as extreme or more extreme than it actually was if drawn from the estimated effect distribution from the replications \citep{mathur_rrr}:
-
-```{r}
-( p.orig.main.sim = p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
-                      yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2) )
-```
-
-\textbf{Sanity check:} Try meta-analyzing the sites' point estimates instead.
-
-```{r}
-meta.main = rma.uni( yi = site.main.est, vi = site.main.SE^2,
-                     data=first[ first$group == "b.similar", ],
-                     measure="MD", method="PM" )
-  
-p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
-                      yr = meta.main$b, t2 = meta.main$tau2,
-                      vyr = meta.main$vb )
-```
-It's a bit lower due to the lower estimated heterogeneity here. 
-
-\textbf{Sanity check:} Do these results agree with prediction intervals? They should because there is still basically zero heterogeneity. 
-
-
-```{r}
-pred = pred_int( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
-                      rep.y = first[first$group=="b.similar",]$site.main.est,
-                      rep.vy = first[first$group=="b.similar",]$site.main.SE^2)
-```
-`r sum( pred$rep.inside )` of 4 similar sites are within their prediction intervals.
-
-
-
-
-
-## Statistical consistency of interaction estimates between original and replications (similar sites only)
-
-
-We again estimate the mean and heterogeneity of the site-specific effects among the replications using the same mixed model (among only similar sites) that we fit above. 
-
-```{r}
-# same mixed model as above
-Vhat = 0.14362  # variance of random slopes of tempt:load
-Mhat = fixef(m)[["tempt:load"]]
-SE.Mhat = sqrt(vcov(m)["tempt:load", "tempt:load"])
-```
-
-Compute $P_{orig}$:
-
-```{r}
-p.orig.int.sim = p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
-                      yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2)
-```
-
-\textbf{Sanity check:} Use meta-analysis instead.
-
-```{r}
-meta.int = rma.uni( yi = site.int.est, vi = site.int.SE^2,
-                     data=first[ first$group == "b.similar", ],
-                     measure="MD", method="PM" )
-
-p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
-                      yr = meta.int$b, t2 = meta.int$tau2,
-                      vyr = meta.int$vb )
-```
-
-
-```{r}
-pred = pred_int( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
-                      rep.y = first[first$group=="b.similar",]$site.int.est,
-                      rep.vy = first[first$group=="b.similar",]$site.int.SE^2)
-```
-`r sum( pred$rep.inside )` of 4 similar sites are within their prediction intervals. This seems reasonable given $P_{orig}$.
-
-
-## Statistical consistency of main effect estimates between original and replications (all university sites)
-
-We now consider consistency of the original study with all university replications. This allows for more precise estimation of heterogeneity. 
-
-Fit a mixed model excluding only MTurk:
-```{r}
-#detach("package:lmerTest")
-#detach("package:nlme")
-m = lmer( lkl ~ tempt * load + (tempt * load | site), data = b[ ! b$is.mturk, ] )
-Vhat = 0.06692  # variance of random slopes of tempt; manual because extracting the object is huge pain
-Mhat = fixef(m)[["tempt"]]
-SE.Mhat = sqrt(vcov(m)["tempt", "tempt"])
-```
-
-Compute $P_{orig}$:
-
-```{r}
-( p.orig.main.uni = p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
-                      yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2) )
-```
-
-As a sanity check, try meta-analyzing the sites' point estimates instead:
-
-```{r}
-meta.int = rma.uni( yi = site.main.est, vi = site.main.SE^2,
-                     data=first[ ! first$is.mturk, ],
-                     measure="MD", method="PM" )
-
-p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
-                      yr = meta.main$b, t2 = meta.main$tau2,
-                      vyr = meta.main$vb )
-```
-
-The estimated main effect and heterogeneity in similar sites was $\widehat{M}=$ `r round( Mhat, 2 )` and $\widehat{V}=$ `r round( Vhat, 2 )` in the mixed model compared to $\widehat{M}=$ `r round( meta.main$b , 2 )` and $\widehat{V}=$ `r round( meta.main$tau2, 2 )` in the meta-analysis. They agree very closely. 
-
-
-Another sanity check: Do these results, suggestive of good consistency, agree with prediction intervals? They should because there is basically zero heterogeneity. 
-```{r}
-pred = pred_int( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
-                      rep.y = first[ ! first$is.mturk, ]$site.main.est,
-                      rep.vy = first[ ! first$is.mturk, ]$site.main.SE^2)
-```
-`r sum( pred$rep.inside )` of 10 university sites are within their prediction intervals. This is close to the 95\% we would expect under consistency.
-
-
-
-## Statistical consistency of interaction estimates between original and replications (all university sites)
-
-
-We again estimate the mean and heterogeneity of the site-specific effects among the replications using the same mixed model (among only similar sites) that we fit above. 
-
-```{r}
-# same mixed model as above
-Vhat = 0.05823  # variance of random slopes of tempt:load
-Mhat = fixef(m)[["tempt:load"]]
-SE.Mhat = sqrt(vcov(m)["tempt:load", "tempt:load"])
-```
-
-Compute $P_{orig}$:
-
-```{r}
-( p.orig.int.uni = p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
-                      yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2) )
-```
-
-As a sensitivity analysis, use meta-analysis instead:
-
-```{r}
-meta.int = rma.uni( yi = site.int.est, vi = site.int.SE^2,
-                     data=first[ ! first$is.mturk, ],
-                     measure="MD", method="PM" )
-
-p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
-                      yr = meta.int$b, t2 = meta.int$tau2,
-                      vyr = meta.int$vb )
-```
-
-The estimated interaction and heterogeneity in similar sites was $\widehat{M}=$ `r round( Mhat, 2 )` and $\widehat{V}=$ `r round( Vhat, 2 )` in the mixed model compared to $\widehat{M}=$ `r round( meta.int$b , 2 )` and $\widehat{V}=$ `r round( meta.int$tau2, 2 )` in the meta-analysis. They agree very closely. 
-
-Sanity check: Do these relatively poor consistency results agree with prediction intervals? 
-
-\textbf{Sanity check:} Do these poor consistency results agree with prediction intervals? 
-```{r}
-pred = pred_int( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
-                      rep.y = first[ ! first$is.mturk, ]$site.int.est,
-                      rep.vy = first[ ! first$is.mturk, ]$site.int.SE^2)
-```
-`r sum( pred$rep.inside )` of 10 university sites are within their prediction intervals. This is borderline compared to expectation, as is $P_{orig}$ when compared to the corresponding $\alpha=0.05$ threshold.
-
-
-
-
-## Effectiveness of cognitive load manipulation on MTurk
-
-Is the cognitive load manipulation less effective in MTurk vs. all universities combined? That is, does its effect on the tempt * load interaction vary between MTurk and all universities combined?
-
-```{r}
-( m.manip = lmer( lkl ~ tempt * load * is.mturk + (tempt * load | site), data = b ) )
-# mturk cannot have its own random slope because only one such site
-CI.manip = confint(m.manip, method = "Wald")
-```
-
-* Effect of MTurk vs. university on effect of cognitive load ($L * Turk$) interaction: `r round( fixef(m.manip)["tempt:load:is.mturk"], 2 )`, 95% CI: `r round( CI.manip[ row.names(CI.manip) == "tempt:load:is.mturk" ], 2 )`. 
-
-Are subjects' reported difficulty or effort associated with the cognitive load manipulation less for MTurk vs. all universities combined?
-
-```{r}
-# subset to only subjects actually assigned to cognitive load
-# mturk cannot have its own random slope because only one such site
-( m.effort = lmer( count.eff ~ is.mturk + (1 | site), data = b[ b$load==1, ] ) )
-CI.effort = confint(m.effort, method = "Wald")
-
-( m.hard = lmer( count.hard ~ is.mturk + (1 | site), data = b[ b$load==1, ] ) )
-# cannot include random slopes as random slopes due to convergence problems
-CI.hard = confint(m.hard, method = "Wald")
-```
-
-
-* Effect of MTurk vs. university on perceived effort needed for cognitive load task: `r round( fixef(m.effort)["is.mturk"], 2 )`, 95% CI: `r round( CI.effort[ row.names(CI.effort) == "is.mturk" ], 2 )`
-
-* Effect of MTurk vs. university on perceived difficulty of cognitive load task: `r round( fixef(m.hard)["is.mturk"], 2 )`, 95% CI: `r round( CI.hard[ row.names(CI.hard) == "is.mturk" ], 2 )`
-
-\textbf{Summary}: There is no evidence here that the cognitive load manipulation is less effective on MTurk than in universities, either based on its actual effect on likelihood judgements or on its subjective impact.
-
-
-## More on MTurk vs. college students
-
-How much do students care about answering questions correctly in class by site?
-```{r}
-kable( aggregate( importance ~ group, FUN = mean, data = b ) )
-kable( aggregate( badness ~ group, FUN = mean, data = b ) )
-
-summary( lm( ( b$importance - mean(b$importance, na.rm=TRUE) ) ~ site, data = b ) )
-summary( lm( ( b$badness - mean(b$importance, na.rm=TRUE) ) ~ site, data = b ) )
-```
-
-Do MTurkers care less than students?
-```{r}
-( m.import = lmer( b$importance ~ group + (1 | site), data = b ) )
-CI.import = confint(m.import, method = "Wald")
-
-( m.bad = lmer( b$badness ~ group + (1 | site), data = b ) )
-CI.bad = confint(m.bad, method = "Wald")
-```
-Actually, they care more.
-
-
-\newpage
 
 \doublespacing
 
@@ -890,13 +202,48 @@ Palo Alto, CA
 
 # Introduction
 
+```{r}
+######## Get Effect Estimates From Original Study ########
+
+##### Main effect from original #####
+yi.orig.main = 2.93 - 1.90
+var.mean0 = 1.42^2 / 30
+var.mean1 = 2.16^2 / 30
+vyi.orig.main = var.mean0 + var.mean1
+
+# sanity check: try to reproduce t-stat in original paper
+SMD.orig.main = yi.orig.main / sqrt( vyi.orig.main )
+# matches their t= 2.19 (pg 302, column 2)
+
+pval.orig.main = 2 * ( 1 - pt( q = abs( SMD.orig.main ), df = 58 ) )
+orig.main.lo = yi.orig.main - qt( 0.975, df = 58 ) * sqrt(vyi.orig.main)
+orig.main.hi = yi.orig.main + qt( 0.975, df = 58 ) * sqrt(vyi.orig.main)
+
+
+##### Interaction effect from original #####
+# interaction is the "difference in differences"
+yi.orig.int = ( 5.27 - 2.70 ) - ( 2.93 - 1.90 )
+vyi.orig.int = ( 1.42^2 / 30 ) + ( 2.16^2 / 30 ) + ( 2.17^2 / 30 ) + ( 2.36^2 / 30 )
+# just add the variances that contribute to the linear combo by independence
+
+# sanity check: reproduce original paper's F-stat
+SMD.orig.int = yi.orig.int / sqrt( vyi.orig.int )  
+F.stat = SMD.orig.int^2  # square a t-stat to get F-stat
+# appears within rounding error (reported: F = 4.15)
+
+pval.orig.int = 2 * ( 1 - pt( q = abs( SMD.orig.int ), df = 116 ) )
+orig.int.lo = yi.orig.int - qt( 0.975, df = 116 ) * sqrt(vyi.orig.int)
+orig.int.hi = yi.orig.int + qt( 0.975, df = 116 ) * sqrt(vyi.orig.int)
+```
+
 \citet{risen} examined the existence and mechanisms of the belief that "tempting fate" is punished with ironic bad outcomes. They hypothesized, for example, that students believe that they are more likely to be called on in class to answer a question about the assigned reading if, in fact, they had not done the reading (and thus had "tempted fate") versus if they had come to class prepared (and thus had not "tempted fate"). This form of irrational thinking was hypothesized to originate from "System 1" processes that use potentially error-prone heuristics to render fast, effortless judgments. In contrast, alternative "System 2" cognitive processes, which rely on slow, deliberative thinking, are thought to sometimes override System 1’s heuristic judgments (e.g., \citet{epstein}). Thus, \citet{risen} additionally hypothesized that System 2 processes may help suppress irrational heuristics regarding tempting fate, and thus that under a cognitive load manipulation designed to preoccupy System 2 resources, the effect of tempting fate on subjects' perceived likelihood of a bad outcome would be magnified. That is, they hypothesized a positive statistical interaction between cognitive load and tempting fate on subjects' perceived likelihood of an ironic bad outcome. 
 
 \citet{risen}'s Study 6, the target of replication, used a between-subjects factorial design to assess this possibility by manipulating the behavior of a character in a scenario (a student who had either tempted fate by not doing the assigned reading or who had not tempted fate) as well as the presence or absence of cognitive load on subjects. Subjects assigned to complete the task without cognitive load simply read the scenario and then judged the likelihood of being called on in class. Subjects assigned to complete the task under cognitive load were required to count backwards by 3s from a large number while reading the scenario, after which they provided the likelihood judgment. This study provided evidence for the predicted main effect of tempting fate in subjects not assigned to cognitive load (estimated difference in perceived likelihood after tempting fate vs. not tempting fate: $b=$ `r yi.orig.main` with 95\% CI: [`r round( orig.main.lo, 2)`, `r round( orig.main.hi, 2)`]; $p=$ `r round( pval.orig.main, 2)`)\footnote{Approximate effect sizes were recomputed from rounded values in \citep{risen}.} as well as the target interaction effect (estimated effect of tempting fate vs. not tempting fate for subjects under cognitive load vs. not under cognitive load: $b=$ `r yi.orig.int` with 95\% CI: [`r round( orig.int.lo, 2)`, `r round( orig.int.hi, 2)`]; $p=$ `r round( pval.orig.int, 2)`). 
 
 
 ```{r, echo = FALSE}
-# get effect sizes from RPP data
+######## Get Effect Estimates From RPP ########
+
 setwd("~/Dropbox/Personal computer/Independent studies/Many Labs 5 (ML5)/Linked to OSF/3. Analysis/R code/ML5_risen_gilovich")
 
 rpp = read.table("data_prepped_rpp.txt")
@@ -905,7 +252,7 @@ rpp$tempt = ifelse( rpp$Had.read == 1, 0, 1 )
 rpp = rpp[ ( as.numeric( rpp$End.num ) <= 561 | is.na( rpp$End.num) ) & 
              ( as.numeric( rpp$Effort ) != 0 | is.na(rpp$Effort) ), ]
 
-# reproduce - works :)
+# reproduce RPP main model - works :)
 # summary(aov(Likelihood ~ Load * tempt, data = rpp))
 
 lm.rpp = lm(Likelihood ~ Load * tempt, data = rpp)
@@ -964,7 +311,7 @@ Sample sizes in the similar sites were chosen to allow, in aggregate, more than 
 
 Four similar university sites (University of Pennsylvania, University of California at Berkeley, University of Virginia, and Stanford University) contributed a total of $n=$ `r sum(length( b[,1][b$group == "b.similar"] ))` analyzed subjects (after exclusions per \emph{a priori} criteria) to primary analyses; the MTurk sample contributed $n=$ `r sum(length( b[,1][b$group == "a.mturk"] ))` analyzed subjects to primary analyses. An additional 6 dissimilar university sites contributed $n=$ `r sum(length( b[,1][b$group == "c.dissimilar"] ))` analyzed subjects to secondary analyses. Table 1 displays sample sizes, the number of exclusions, and protocol characteristics for all sites. 
 
-To estimate the main effect of tempting fate and the target interaction within each site, we fit an ordinary least squares regression model of perceived likelihood on tempting fate, cognitive load, and their interaction within each site. This analysis approach is statistically equivalent to the ANOVA model fit in the original study while also yielding coefficient estimates that are directly comparable to those estimated in primary analysis models, discussed below. Figures 1 and 2, respectively, display these within-site estimates for the main effect and interaction, respectively. Among the 4 similar sites, `r sum( first$site.main.est[ first$group == "b.similar" ] > 0 )` had main effect estimates in the same direction as the original study estimate, albeit of considerably smaller magnitude ($b=$ `r round( first$site.main.est[ first$site == "U Penn" ], 2 )` at University of Pennsylvania, $b=$ `r round( first$site.main.est[ first$site == "Stanford" ], 2 )` at Stanford, and $b=$ `r round( first$site.main.est[ first$site == "UVA" ], 2 )` at University of Virginia vs. `r yi.orig.main` in the original study). Main effect estimates in similar sites had $p$-values ranging from `r round( min( first$site.main.pval[ first$group == "b.similar" ] ), 2 )` to `r round( max( first$site.main.pval[ first$group == "b.similar" ] ), 2 )`. In the MTurk sample, the target estimate was in the same direction as the original, but was of smaller size, and it was almost identical to the estimate previously obtained under the same protocol by in RPP (`r my_round( first$site.main.est[first$is.mturk] , 2 )` in the present sample vs. `r my_round( coef( lm.rpp )["tempt"] , 2 )` in RPP). Considering all 10 university sites, `r sum( first$site.main.est[ ! first$is.mturk ] > 0 )` had main effect estimates in the same direction as the original study. However, these estimates were of smaller magnitude than the original estimate and with confidence intervals substantially overlapping zero with the exception of Eotvos Lorand University, which obtained a main effect comparable to that of the original study ($b =$ `r round( first$site.main.est[ first$site == "Eotvos" ], 2 )` with 95% CI: `r round( first$site.main.lo[ first$site == "Eotvos" ], 2 )`, `r round( first$site.main.hi[ first$site == "Eotvos" ], 2 )`; $p=$ `r round( first$site.main.pval[ first$site == "Eotvos" ], 3 )`).
+To estimate the main effect of tempting fate and the target interaction within each site, we fit an ordinary least squares regression model of perceived likelihood on tempting fate, cognitive load, and their interaction within each site. This analysis approach is statistically equivalent to the ANOVA model fit in the original study while also yielding coefficient estimates that are directly comparable to those estimated in primary analysis models, discussed below. Figures 1 and 2, respectively, display these within-site estimates for the main effect and interaction, respectively\footnote{An alternative for the study-specific estimates would be to use estimates of random intercepts and random slopes by site from the mixed model, but here we use subset analyses for a descriptive characterization that relaxes the across-site distributional assumptions of the mixed model.}. Among the 4 similar sites, `r sum( first$site.main.est[ first$group == "b.similar" ] > 0 )` had main effect estimates in the same direction as the original study estimate, albeit of considerably smaller magnitude ($b=$ `r round( first$site.main.est[ first$site == "U Penn" ], 2 )` at University of Pennsylvania, $b=$ `r round( first$site.main.est[ first$site == "Stanford" ], 2 )` at Stanford, and $b=$ `r round( first$site.main.est[ first$site == "UVA" ], 2 )` at University of Virginia vs. `r yi.orig.main` in the original study). Main effect estimates in similar sites had $p$-values ranging from `r round( min( first$site.main.pval[ first$group == "b.similar" ] ), 2 )` to `r round( max( first$site.main.pval[ first$group == "b.similar" ] ), 2 )`. In the MTurk sample, the target estimate was in the same direction as the original, but was of smaller size, and it was almost identical to the estimate previously obtained under the same protocol by in RPP (`r my_round( first$site.main.est[first$is.mturk] , 2 )` in the present sample vs. `r my_round( coef( lm.rpp )["tempt"] , 2 )` in RPP). Considering all 10 university sites, `r sum( first$site.main.est[ ! first$is.mturk ] > 0 )` had main effect estimates in the same direction as the original study. However, these estimates were of smaller magnitude than the original estimate and with confidence intervals substantially overlapping zero with the exception of Eotvos Lorand University, which obtained a main effect comparable to that of the original study ($b =$ `r round( first$site.main.est[ first$site == "Eotvos" ], 2 )` with 95% CI: `r round( first$site.main.lo[ first$site == "Eotvos" ], 2 )`, `r round( first$site.main.hi[ first$site == "Eotvos" ], 2 )`; $p=$ `r round( first$site.main.pval[ first$site == "Eotvos" ], 3 )`).
 
 Considering the target interaction estimate across sites, only `r sum( first$site.int.est[ first$group == "b.similar" ] > 0 )` of 4 similar sites had estimates in the same direction as the original, and again, these were of considerably smaller magnitude ($b=$ `r round( first$site.int.est[ first$site == "U Penn" ], 2 )` at University of Pennsylvania and $b =$ `r round( first$site.int.est[ first$site == "UVA" ], 2 )` at University of Virginia vs. `r yi.orig.int` in the original study). Interaction estimates in similar sites had $p$-values ranging from `r round( min( first$site.int.pval[ first$group == "b.similar" ] ), 2 )` to `r round( max( first$site.int.pval[ first$group == "b.similar" ] ), 2 )`. In the MTurk sample, the target estimate was in the opposite direction from the original estimate and was slightly larger in magnitude than the previous estimate obtained under the same protocol (`r round( first$site.int.est[first$is.mturk] , 2 )` in the present sample vs. `r round( coef( lm.rpp )["Load:tempt"] , 2 )` in RPP). Considering all 10 university sites, `r sum( first$site.int.est[ ! first$is.mturk ] > 0 )` had point estimates in the same direction as the original study, all of which were of smaller magnitude. With one exception (Eotvos Lorand University), $p$-values across all universities ranged from `r round( sort( first$site.int.pval[ ! first$is.mturk ] )[2], 2 )` to `r round( max( first$site.int.pval[ ! first$is.mturk ] ), 2 )`. Eotvos Lorand University obtained a large point estimate in the opposite direction from the original study ($b =$ `r round( first$site.int.est[ first$site == "Eotvos" ], 2 )` with 95% CI: `r round( first$site.int.lo[ first$site == "Eotvos" ], 2 )`, `r round( first$site.int.hi[ first$site == "Eotvos" ], 2 )`; $p=$ `r round( first$site.int.pval[ first$site == "Eotvos" ], 2 )`).
 
@@ -973,23 +320,200 @@ Considering the target interaction estimate across sites, only `r sum( first$sit
 # Replication results under the updated protocol
 
 
-```{r, echo=FALSE, fig.cap="Forest plot for main effect estimates ordered by site type (MTurk, similar, dissimilar) and then by sample size. Point estimates and 95% CIs for each site are from ordinary least squares regression fit to that site's data. Point estimates and 95% CIs for pooled estimates are from primary and secondary mixed models."}
-forestplot( labeltext=tabletext.main, mean=m.main, lower=l.main, upper=u.main, 
-            zero=0,
-            is.summary = c(TRUE, rep(FALSE,17), TRUE, TRUE))
+
+
+```{r}
+# first, fit models that we need for forest plot's pooled estimates
+#  and subsequent analyses
+
+# prevent brat forest plot from going off page
+opts_chunk$set(echo=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), fig.width=10 )
+
+# Fn: calculate SE for sum of coefficients
+# b1, b2: names of the two coefficients to add
+# .mod: the lmer model object
+lin_combo = function( b1, b2, .mod ) {
+  V = vcov(.mod)
+  SE = sqrt( V[b1, b1] + V[b2, b2] + 2 * V[b1, b2] )
+  est = fixef(.mod)[b1] + fixef(.mod)[b2]
+  lo = as.numeric( est - qnorm(0.975) * SE )
+  hi = as.numeric( est + qnorm(0.975) * SE )
+  pval = ( 1 - pnorm( abs(est / SE) ) ) * 2
+  
+  return( data.frame( est, lo, hi, pval ) )
+}
+
+
+######## Primary Model 1: Only Similar Sites ######## 
+# fit Primary Model 1, to be reported in subsequent section
+# reference level for group is MTurk
+m1 = lmer( lkl ~ tempt * load * group + (tempt * load | site), data = b[ b$group != "c.dissimilar", ] )
+
+# bizarre mystery: changing order of variables in random slope specification
+#  results in convergence failure:
+# lmer( lkl ~ tempt * load * group + (load * tempt | site), data = b[ b$group != "c.dissimilar", ] )
+
+# pooled estimate and CI of main effect (similar sites)
+main.sim = lin_combo( "tempt", "tempt:groupb.similar", m1 )
+
+# pooled estimate and CI of interaction (similar sites)
+int.sim = lin_combo( "tempt:load", "tempt:load:groupb.similar", m1 )
+
+
+
+######## Secondary Model 1': Combining All Universities ######## 
+# here, reference level is all university sites
+m2 = lmer( lkl ~ tempt * load * is.mturk + (tempt * load | site), data = b )
+
+# pooled estimate and CI of main effect (all universities)
+CI2 = confint(m2, method = "Wald")
+main.uni = data.frame( est = fixef(m2)["tempt"], lo = CI2[ "tempt", 1 ],
+                       hi = CI2[ "tempt", 2 ] )
+
+
+# pooled estimate and CI of interaction (all universities)
+int.uni = data.frame( est = fixef(m2)["tempt:load"], lo = CI2[ "tempt:load", 1 ],
+                      hi = CI2[ "tempt:load", 2 ] )
+
+# main effect in MTurk
+mturk.main.m2 = lin_combo( "tempt:is.mturk", "tempt", m2 )
+
+# interaction effect in MTurk
+mturk.int.m2 = lin_combo( "tempt:load:is.mturk", "tempt:load", m2 )
 ```
 
+
+
+
 ```{r, echo=FALSE, fig.cap="Forest plot for main effect estimates ordered by site type (MTurk, similar, dissimilar) and then by sample size. Point estimates and 95% CIs for each site are from ordinary least squares regression fit to that site's data. Point estimates and 95% CIs for pooled estimates are from primary and secondary mixed models."}
-forestplot( labeltext=tabletext.int, mean=m.int, lower=l.int, upper=u.int, 
+
+######## Figure 1: Main Effect Forest Plot ######## 
+
+# Fn: insert spacey elements in vectors for purely cosmetic forest plot reasons
+# spaces are between site types
+# "use.NA" = should we put NA instead of ""?
+pretty_spaces = function(x, use.NA = FALSE){
+  x2 = append( x, ifelse( use.NA, NA, "" ), after = 1)
+  x2 = append( x2, ifelse( use.NA, NA, "" ), after = 3)
+  x2 = append( x2, ifelse( use.NA, NA, "" ), after = 8)
+}
+
+
+# ~~~~~~~~~ CHECK DF
+temp = first[ , names(first) %in% c("site", "site.n", "site.main.est", "site.main.lo", "site.main.hi",
+                                    "site.int.est", "site.int.lo", "site.int.hi", "is.mturk", "group") ]
+temp = rbind( data.frame( site = "Original study", site.n = 120, site.main.est = yi.orig.main, site.main.lo = orig.main.lo, site.main.hi =  orig.main.hi,
+                          site.int.est = yi.orig.int, site.int.lo = orig.int.lo, site.int.hi = orig.int.hi, is.mturk = FALSE, group = "d.original"), temp )
+
+# build text "columns" of forest plot
+# NAs are for making spaces
+tabletext.main = cbind( c( "Study", "", pretty_spaces( as.character(temp$site) ), NA, "Pooled (similar universities)", "Pooled (all universities)" ),
+                 c( "Sample size", "", pretty_spaces(temp$site.n), NA, sum(temp$site.n[temp$group=="b.similar"]),
+                    sum(temp$site.n[ ! temp$is.mturk ]) ),
+                 c( "Main effect est.", "", pretty_spaces(round( temp$site.main.est, 2 )), NA, round( main.sim$est, 2 ),
+                    round( main.uni$est, 2 ) )  
+                 )
+
+# build columns of point estimates, CI lower, and CI upper values for forest plot
+m.main = c( NA, NA, pretty_spaces(temp$site.main.est, use.NA=TRUE), NA, round( main.sim$est, 2 ), round( main.uni$est, 2 ) )
+l.main = c( NA, NA, pretty_spaces(temp$site.main.lo, use.NA=TRUE), NA, round( main.sim$lo, 2 ), round( main.uni$lo, 2 ) )
+u.main = c( NA, NA, pretty_spaces(temp$site.main.hi, use.NA=TRUE), NA, round( main.sim$hi, 2 ), round( main.uni$hi, 2 ) )
+ 
+
+forestplot( labeltext=tabletext.main, mean=m.main, lower=l.main, upper=u.main, 
             zero=0,
             is.summary = c(TRUE, rep(FALSE,17), TRUE, TRUE) )
 ```
 
 
-Primary analyses aimed to: (1) estimate the target interaction and the main effect under the updated protocol in similar sites; and (2) asssess whether the target interaction and the main effect estimates differed between the updated protocol and the RPP protocol. To this end, we combined data from the similar sites and MTurk to fit a linear mixed model with fixed effects representing main effects of tempting fate, cognitive load, and protocol (similar sites under the updated protocol vs. MTurk). To account for correlation of observations within a site, the model also contained random intercepts by site and random slopes by site of tempting fate, cognitive load, and their interaction; in all analyses, all random effects were assumed independently and identically normal\footnote{As a planned sensitivity analysis, we also refit the same ANOVA model used in the original study, which ignores correlation of observations within sites. This analysis yielded qualitatively similar results (Appendix).}. This model allows estimation of the target effect within similar sites and within MTurk and permits formal assessment of the extent to which these effects differ (via the three-way interaction of protocol, tempting fate, and cognitive load). (Details of the model specification and interpretations for each coefficient of interest are provided in the preregistered protocol (\url{https://osf.io/h5a9y/})). 
+
+```{r, echo=FALSE, fig.cap="Forest plot for main effect estimates ordered by site type (MTurk, similar, dissimilar) and then by sample size. Point estimates and 95% CIs for each site are from ordinary least squares regression fit to that site's data. Point estimates and 95% CIs for pooled estimates are from primary and secondary mixed models."}
+
+######## Figure 2: Forest Plot for Interaction ######## 
+
+# build text "columns" of forest plot
+# NAs are for making spaces
+tabletext.int = cbind( c( "Study", "", pretty_spaces( as.character(temp$site) ), NA, "Pooled (similar universities)", "Pooled (all universities)" ),
+                 c( "Sample size", "", pretty_spaces(temp$site.n), NA, sum(temp$site.n[temp$group=="b.similar"]),
+                    sum(temp$site.n[ ! temp$is.mturk ]) ),
+                 c( "Interaction est.", "", pretty_spaces(round( temp$site.int.est, 2 )), NA, round( int.sim$est, 2 ),
+                    round( int.uni$est, 2 ) )  
+                 )
+
+# build columns of point estimates, CI lower, and CI upper values for forest plot
+m.int = c( NA, NA, pretty_spaces(temp$site.int.est, use.NA=TRUE), NA, round( int.sim$est, 2 ), round( int.uni$est, 2 ) )
+l.int = c( NA, NA, pretty_spaces(temp$site.int.lo, use.NA=TRUE), NA, round( int.sim$lo, 2 ), round( int.uni$lo, 2 ) )
+u.int = c( NA, NA, pretty_spaces(temp$site.int.hi, use.NA=TRUE), NA, round( int.sim$hi, 2 ), round( int.uni$hi, 2 ) )
+ 
+forestplot( labeltext=tabletext.main, mean=m.main, lower=l.main, upper=u.main, 
+            zero=0,
+            is.summary = c(TRUE, rep(FALSE,17), TRUE, TRUE))
+```
+
+
+Primary analyses aimed to: (1) estimate the target interaction and the main effect under the updated protocol in similar sites; and (2) asssess whether the target interaction and the main effect estimates differed between the updated protocol and the RPP protocol. To this end, we combined data from the similar sites and MTurk to fit a linear mixed model with fixed effects representing main effects of tempting fate, cognitive load, and protocol (similar sites under the updated protocol vs. MTurk). To account for correlation of observations within a site, the model also contained random intercepts by site and random slopes by site of tempting fate, cognitive load, and their interaction; in all analyses, all random effects were assumed independently and identically normal\footnote{As a planned sensitivity analysis, we also refit the same ANOVA model used in the original study, which ignores correlation of observations within sites. This analysis yielded qualitatively similar results (Appendix). We also obtained very similar results in additional sensitivity analyses in which we fit a model to only the subset of data from similar sites without the MTurk coefficient or in which we fit meta-analytic counterparts to the primary models (Appendix)}. This model allows estimation of the target effect within similar sites and within MTurk and permits formal assessment of the extent to which these effects differ (via the three-way interaction of protocol, tempting fate, and cognitive load). (Details of the model specification and interpretations for each coefficient of interest are provided in the preregistered protocol (\url{https://osf.io/h5a9y/})). 
+
 
 \captionsetup[table]{labelformat=empty}
 ```{r, echo=FALSE}
+
+######## Table 1: Parameter Estimates from Model 1 ######## 
+
+# using Wald CIs because profile and boot are struggling to 
+#  converge (i.e., assume coefficient estimates are normal,
+#  which is quite reasonable at these sample sizes)
+CI = confint(m1, method="Wald")
+
+# make table
+name = c("Magnitude of X main effect within MTurk", 
+          "Magnitude of X main effect within similar sites",
+          "Effect of similar site vs. MTurk on X main effect", 
+          "Magnitude of X-L interaction within MTurk", 
+          "Magnitude of X-L interaction within similar sites",
+          "Effect of similar site vs. MTurk on X-L interaction"
+          )
+
+value = as.numeric( c( fixef(m1)["tempt"], 
+           main.sim$est, 
+           fixef(m1)["tempt:groupb.similar"],   
+           fixef(m1)["tempt:load"], 
+           int.sim$est, 
+           fixef(m1)["tempt:load:groupb.similar"]
+           ) )
+value = my_round(value, 2)
+
+lo = as.numeric( c( CI["tempt", 1], 
+           main.sim$lo, 
+           CI["tempt:groupb.similar", 1],
+           CI["tempt:load", 1], 
+           int.sim$lo, 
+           CI["tempt:load:groupb.similar", 1]
+           ) )
+lo = my_round(lo, 2)
+
+hi = as.numeric( c( CI["tempt", 2], 
+           main.sim$hi, 
+           CI["tempt:groupb.similar", 2],
+           CI["tempt:load", 2], 
+           int.sim$hi, 
+           CI["tempt:load:groupb.similar", 2]
+           ) )
+hi = my_round(hi, 2)
+
+CI.string = paste( "[", lo, ", ", hi, "]", sep="" )
+
+pvals.m1 = coef(summary(m1))[,5]
+pval = as.numeric( c( pvals.m1["tempt"], 
+           main.sim$pval, 
+           pvals.m1["tempt:groupb.similar"],
+           pvals.m1["tempt:load"], 
+           int.sim$pval, 
+           pvals.m1["tempt:load:groupb.similar"]
+           ) )
+pval = my_round(pval, 2)
+
+m1.res = data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval )
+
 kable(m1.res, caption = "Table 2: Estimates of the main effect and target interaction effect under the updated protocol (similar sites) and the RPP protocol (MTurk), as well as estimates of the difference between these estimates. X = tempting fate; L = cognitive load.", col.names = c("Parameter", "Estimate", "95% CI", "p-value"))
 ```
 
@@ -1001,19 +525,179 @@ Consistent with the RPP replication, the present results collected under the upd
 A planned secondary analysis addressed the same questions as the primary analyses, but using data from all university sites rather than only similar sites. Results (Table 3) were qualitatively similar to primary results, again providing little support for the main effect of tempting fate, the target interaction, or differences between the estimates in university sites versus under the RPP protocol. As in primary analyses, the main effect and interaction appeared relatively homogeneous across sites (estimated random intercept standard deviation = $0.23$; estimated random slope standard deviation = $0.38$). 
 
 \captionsetup[table]{labelformat=empty}
-```{r, echo=FALSE}
+```{r}
+
+######## Table 2: Parameter Estimates from Model 1' ########
+
+name = c("Magnitude of X main effect within MTurk", 
+          "Magnitude of X main effect within university sites",
+          "Effect of university site vs. MTurk on X main effect", 
+          "Magnitude of X-L interaction within MTurk", 
+          "Magnitude of X-L interaction within university sites",
+          "Effect of university site vs. MTurk on X-L interaction"
+          )
+
+# negative ones are when coefficient is ( MTurk - uni )
+value = as.numeric( c( mturk.main.m2$est, 
+           fixef(m2)["tempt"], 
+           -fixef(m2)["tempt:is.mturk"],  
+           mturk.int.m2$est, 
+           fixef(m2)["tempt:load"], 
+           -fixef(m2)["tempt:load:is.mturk"]
+           ) )
+value = my_round(value, 2)
+
+lo = as.numeric( c( mturk.main.m2$lo, 
+           CI2[ row.names(CI2) == "tempt", 1 ], 
+           -CI2[ row.names(CI2) == "tempt:is.mturk", 1 ],
+           mturk.int.m2$lo, 
+           CI2[ row.names(CI2) == "tempt:load", 1 ], 
+           -CI2[ row.names(CI2) == "tempt:load:is.mturk", 1 ]
+           ) )
+lo = my_round(lo, 2)
+
+hi = as.numeric( c( mturk.main.m2$hi, 
+           CI2[ row.names(CI2) == "tempt", 2 ], 
+           -CI2[ row.names(CI2) == "tempt:is.mturk", 2 ],
+           mturk.int.m2$hi, 
+           CI2[ row.names(CI2) == "tempt:load", 2 ], 
+           -CI2[ row.names(CI2) == "tempt:load:is.mturk", 2 ]
+           ) )
+hi = my_round(hi, 2)
+
+CI.string = paste( "[", lo, ", ", hi, "]", sep="" )
+
+pvals.m2 = coef(summary(m2))[,5]
+pval = as.numeric( c( mturk.main.m2$pval, 
+           pvals.m2["tempt"], 
+           pvals.m2["tempt:is.mturk"],
+           mturk.int.m2$pval, 
+           pvals.m2["tempt:load"], 
+           pvals.m2["tempt:load:is.mturk"]
+           ) )
+pval = my_round(pval, 2)
+
+m2.res = data.frame( "Name"=name, "Estimate"=value, "CI"=CI.string, "pval"=pval )
+
 kable(m2.res, caption = "Table 3: Estimates of the main effect and target interaction effect in all university sites and under the RPP protocol (MTurk), as well as estimates of the difference between these estimates. X = tempting fate; L = cognitive load.", col.names = c("Parameter", "Estimate", "95% CI", "p-value"))
-```
+````
+
+
 
 # Statistical consistency of replication results with original results
+
+```{r, message=FALSE, warning=FALSE}
+
+######## P_orig For Main Effect (Similar Sites) ######## 
+
+detach("package:lmerTest")
+#detach("package:nlme")
+m = lmer( lkl ~ tempt * load + (tempt * load | site), data = b[ b$group == "b.similar", ] )
+Vhat.main = 0.05701  # variance of random slopes of tempt
+Mhat.main = fixef(m)[["tempt"]]
+SE.Mhat = sqrt(vcov(m)["tempt", "tempt"])
+
+p.orig.main.sim = p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
+                      yr = Mhat.main, t2 = Vhat.main, vyr = SE.Mhat^2 )
+
+
+######## P_orig For Interaction Effect (Similar Sites) ######## 
+
+Vhat.int = 0.14362  # variance of random slopes of tempt:load
+Mhat.int = fixef(m)[["tempt:load"]]
+SE.Mhat = sqrt(vcov(m)["tempt:load", "tempt:load"])
+
+p.orig.int.sim = p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
+                      yr = Mhat.int, t2 = Vhat.int, vyr = SE.Mhat^2)
+
+
+
+######## P_orig For Main Effect (All Universities) ########
+
+# fit mixed model excluding only MTurk
+m = lmer( lkl ~ tempt * load + (tempt * load | site), data = b[ ! b$is.mturk, ] )
+Vhat = 0.06692  # variance of random slopes of tempt; manual because extracting the object is huge pain
+Mhat = fixef(m)[["tempt"]]
+SE.Mhat = sqrt(vcov(m)["tempt", "tempt"])
+
+p.orig.main.uni = p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
+                      yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2)
+
+
+######## P_orig For Main Effect (Similar Sites) ########
+
+# same mixed model as above
+Vhat = 0.05823  # variance of random slopes of tempt:load
+Mhat = fixef(m)[["tempt:load"]]
+SE.Mhat = sqrt(vcov(m)["tempt:load", "tempt:load"])
+
+p.orig.int.uni = p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
+                      yr = Mhat, t2 = Vhat, vyr = SE.Mhat^2)
+```
+
+
+
+
+
 
 To supplement primary analyses, which focused on using the replication data to re-estimate the target effect size, we conducted post hoc secondary analyses to assess the extent to which the replication findings were statistically consistent with the original study; that is, whether it is plausible that the original study was drawn from the same distribution as the replications \citep{mathur_rrr}. These analyses account for uncertainty in both the original study and the replication and for possible heterogeneity in the replications, and they can help distinguish whether an estimated effect size in the replications that appears to disagree with the original estimate may nevertheless be statistically consistent with the original study due, for example, to low power in the original study or in the replications or to heterogeneity \citep{mathur_rrr}. We found that, if indeed the original study were statistically consistent with results from the similar sites in the sense of being drawn from the estimated distribution of the replications, there would be a probability of $P_{orig}=$ `r round( p.orig.main.sim, 2 )` that the original main effect estimate would have been as extreme as or more extreme than the observed value of $b=$ `r yi.orig.main`. This probability is slightly higher ($P_{orig}=$ `r round( p.orig.main.uni, 2 )`) when considering the estimated distribution in all university sites. For the target interaction, the probability of an original estimate at least as extreme as the observed $b=$ `r yi.orig.int` if the original study were statistically consistent with the similar-site replications is $P_{orig}=$ `r round( p.orig.int.sim, 2 )`; this probability decreases slightly to $P_{orig}=$ `r round( p.orig.int.uni, 2 )` when considering the distribution of all university sites. 
 
 
 # Evaluating proposed explanations for the replication failure
 
-In planned secondary analyses, we assessed the original authors' hypotheses regarding the previous replication failure in RPP. First, it is possible that the cognitive load manipulation could not be implemented reliably in an online setting due, for example, to competing distractions in subjects' uncontrolled environments \citep{rand}. We therefore assessed the extent to which the efficacy of the cognitive load manipulation differed between MTurk subjects and all university subjects by fitting a mixed model with a three-way interaction of tempting fate, cognitive load, and an indicator for whether a subject was recruited on MTurk or from any university (details in Appendix). The three-way interaction estimate suggested that the magnitude of the target interaction -- that is, the strength of influence of the cognitive load manipulation on the tempting-fate effect -- was nearly identical for MTurk subjects versus university subjects (`r round( fixef(m.manip)["tempt:load:is.mturk"], 2 )` with 95% CI: `r round( CI.manip[ row.names(CI.manip) == "tempt:load:is.mturk" ], 2 )`; $p=0.95$).  
 
+```{r, message=FALSE, warnings=FALSE}
+
+######## Efficacy of Cognitive Load on MTurk ########
+
+# reload lmerTest - have to go back and forth
+# because it cause incompatibility elsewhere
+library(lmerTest)
+
+
+# MTurk cannot have its own random slope because only one such site
+m.manip = lmer( lkl ~ tempt * load * is.mturk + (tempt * load | site), data = b )
+CI.manip = confint(m.manip, method = "Wald")
+
+
+######## Effort Of Cognitive Load Task ########
+
+# subset to only subjects actually assigned to cognitive load
+# mturk cannot have its own random slope because only one such site
+m.effort = lmer( count.eff ~ is.mturk + (1 | site), data = b[ b$load==1, ] )
+CI.effort = confint(m.effort, method = "Wald")
+
+
+######## Difficulty Of Cognitive Load Task ########
+m.hard = lmer( count.hard ~ is.mturk + (1 | site), data = b[ b$load==1, ] )
+# cannot include random slopes as random slopes due to convergence problems
+CI.hard = confint(m.hard, method = "Wald")
+
+
+######## Moderation Of Target Interaction By SAT Score ########
+
+# center and scale SAT score for interpretability
+b$SATc = ( b$SAT - mean(b$SAT, na.rm=TRUE) ) / 10
+
+m.sat = lmer( lkl ~ tempt * load * SATc + (tempt * load | site), data = b )
+CI.SAT = confint(m.sat, method = "Wald")
+
+
+######## Perceived Importance of Answering Questions Correctly ########
+m.import = lmer( b$importance ~ group + (1 | site), data = b )
+CI.import = confint(m.import, method = "Wald")
+
+
+######## Perceived Negativity of Answering Questions Correctly ########
+m.bad = lmer( b$badness ~ group + (1 | site), data = b )
+CI.bad = confint(m.bad, method = "Wald")
+```
+
+
+In planned secondary analyses, we assessed the original authors' hypotheses regarding the previous replication failure in RPP. First, it is possible that the cognitive load manipulation could not be implemented reliably in an online setting due, for example, to competing distractions in subjects' uncontrolled environments \citep{rand}. We therefore assessed the extent to which the efficacy of the cognitive load manipulation differed between MTurk subjects and all university subjects by fitting a mixed model with a three-way interaction of tempting fate, cognitive load, and an indicator for whether a subject was recruited on MTurk or from any university. The three-way interaction estimate suggested that the magnitude of the target interaction -- that is, the strength of influence of the cognitive load manipulation on the tempting-fate effect -- was nearly identical for MTurk subjects versus university subjects (`r round( fixef(m.manip)["tempt:load:is.mturk"], 2 )` with 95% CI: `r round( CI.manip[ row.names(CI.manip) == "tempt:load:is.mturk" ], 2 )`; $p=0.95$).  
+
+
+TEST: `r round( coef(summary(m.manip))[ "tempt:load:is.mturk" , 5 ], 2 )`
 
 ```{r, echo=FALSE}
 # code for p-values chronologically, starting with the above
@@ -1061,9 +745,161 @@ We used an updated replication protocol developed in collaboration with original
 
 \newpage
 
-# References
-
 \unhidefromtoc
+
+
+
+
+
+
+\doublespacing
+
+\begin{center}
+\textbf{ \LARGE{Supplementary Analysis Code} }
+\vspace{10mm}
+\end{center}
+
+\singlespacing
+
+
+\tableofcontents
+
+\newpage
+
+# Data Quality 
+
+```{r, results='asis'}
+opts_chunk$set(echo=TRUE, tidy=FALSE, tidy.opts=list(width.cutoff=60) )
+
+# total and excluded bad subjects
+d = data.frame( site = first$site, n.excl = first$site.n.excl, n.total = first$site.n)
+
+stargazer(d, header=FALSE, summary=FALSE,
+          rownames = FALSE, title="Excluded and analyzed subjects by site" )
+```
+
+
+```{r, results='asis'}
+# sample sizes by site type
+t = table( b$group )
+stargazer( as.data.frame(t), header=FALSE, summary=FALSE,
+           rownames = FALSE,
+           colnames = FALSE,
+           title = "Total analysis sample sizes by site type" )
+```
+
+We excluded subjects exactly per the preregistration and the original study protocol, resulting in `r sum( first$site.n.excl )` exclusions across all sites, including MTurk. This is `r 100 * round( sum( first$site.n.excl ) / sum( first$site.n.excl, first$site.n ), 2 )`\% of the originally collected data.
+
+
+
+# Descriptive Stats and Plots
+
+Boxplots: medians and IQRs; lines: simple means by subset. (For the same plots within each site, see the data prep PDF.) These aggregated means and SDs pool across all sites within a group (similar, dissimilar, MTurk) and do not account for clustering by site.
+
+```{r}
+##### Fn: Interaction Plot #####
+# pass the desired subset of data
+int_plot = function( dat, ggtitle ) {
+    agg = ddply( dat, .(load, tempt), summarize, val = mean(lkl, na.rm=TRUE)   )  # aggregate data for plotting happiness
+    
+  colors = c("black", "orange")
+  plot( ggplot( dat, aes(x = as.factor(load), y = lkl, color=as.factor(tempt) ) ) + geom_boxplot(width=0.5) +
+      geom_point(data = agg, aes(y = val), size=4 ) +
+      geom_line(data = agg, aes(y = val, group = tempt), lwd=2 ) +
+      scale_color_manual(values=colors) +
+      scale_y_continuous( limits=c(0,10) ) +
+      ggtitle(ggtitle) +
+      theme_bw()  + xlab("Cognitive load?") + ylab("Perceived likelihood of being called on") +
+      guides(color=guide_legend(title="Tempted fate?"))
+    )
+}
+
+##### Plot By Subset #####
+int_plot(b, ggtitle = "All sites (including MTurk)")  # all sites
+int_plot(b[ b$group=="b.similar", ], ggtitle = "Similar sites")
+int_plot(b[ b$group=="c.dissimilar", ], ggtitle = "Dissimilar sites")
+int_plot(b[ b$group=="a.mturk", ], ggtitle = "Mechanical Turk")
+```  
+
+
+
+## Means and SDs by site type
+
+
+```{r, results='asis'}
+agg.means = aggregate( lkl ~ tempt + load + group, b, mean)
+agg.sds = aggregate( lkl ~ tempt + load + group, b, sd)
+
+agg = data.frame( cbind( agg.means, agg.sds$lkl) )
+names(agg)[4:5] = c("mean", "SD")
+
+stargazer( agg, header=FALSE, summary=FALSE,
+           title = "Means and SDs of perceived likelihood across all subjects
+           within each site type (naively pooling all sites)" )
+``` 
+
+
+
+# Sanity Checks for Reported Results
+
+## Fit subset model counterpart to primary analysis model
+
+Instead of fitting a model that includes both MTurk and similar sites with an interaction of site type, try fitting a model to only the subset of similar sites. 
+
+```{r}
+m1.temp = lmer( lkl ~ tempt * load + (tempt * load | site), data = b[ b$group == "b.similar", ] )
+CI.temp = confint( m1.temp, method = "Wald" )
+```
+
+In the primary model, the estimated main effect was `r round( main.sim$est, 2)` with 95\% CI: (`r round( main.sim$lo, 2)`, `r round( main.sim$hi, 2)`), whereas in the present subset model, it is `r round( fixef(m1.temp)["tempt"], 2)` with 95\% CI: (`r round( CI.temp[row.names(CI.temp) == "tempt", 1], 2)`, `r round( CI.temp[row.names(CI.temp) == "tempt", 2], 2)`). Also, in the primary model, the estimated interaction effect was `r round( int.sim$est, 2)` with 95\% CI: (`r round( int.sim$lo, 2)`, `r round( int.sim$hi, 2)`), whereas in the present subset model, it is `r round( fixef(m1.temp)["tempt:load"], 2)` with 95\% CI: (`r round( CI.temp[row.names(CI.temp) == "tempt:load", 1], 2)`, `r round( CI.temp[row.names(CI.temp) == "tempt:load", 2], 2)`). These results are similar.
+
+
+## Fit meta-analytic counterparts to primary analysis model
+
+Instead of fitting a mixed model to observation-level data, fit random-effects meta-analysis to the point estimates. For the main effect:
+
+```{r}
+meta.main = rma.uni( yi = site.main.est, vi = site.main.SE^2,
+                     data=first[ first$group == "b.similar", ],
+                     measure="MD", method="PM" )
+  
+p_orig( orig.y = yi.orig.main, orig.vy = vyi.orig.main,
+                      yr = meta.main$b, t2 = meta.main$tau2,
+                      vyr = meta.main$vb )
+```
+In the mixed model (Model 1), the estimated main effect and heterogeneity in similar sites was $\widehat{M}=$ `r round( Mhat.main, 2 )` and $\widehat{V}=$ `r round( Vhat.main, 2 )` in the mixed model compared to $\widehat{M}=$ `r round( meta.main$b , 2 )` and $\widehat{V}=$ `r round( meta.main$tau2, 2 )` in the meta-analysis. They agree very closely. $P_{orig}$ is a bit lower due to the lower estimated heterogeneity here. 
+
+For the target interaction effect:
+
+```{r}
+meta.int = rma.uni( yi = site.int.est, vi = site.int.SE^2,
+                     data=first[ first$group == "b.similar", ],
+                     measure="MD", method="PM" )
+
+p_orig( orig.y = yi.orig.int, orig.vy = vyi.orig.int,
+                      yr = meta.int$b, t2 = meta.int$tau2,
+                      vyr = meta.int$vb )
+```
+In the mixed model (Model 1'), the estimated interaction effect and heterogeneity in similar sites was $\widehat{M}=$ `r round( Mhat.int, 2 )` and $\widehat{V}=$ `r round( Vhat.int, 2 )` in the mixed model compared to $\widehat{M}=$ `r round( meta.int$b , 2 )` and $\widehat{V}=$ `r round( meta.int$tau2, 2 )` in the meta-analysis. They agree reasonably closely. 
+
+
+
+
+## Refit original study's ANOVA model
+
+The original study used two-way ANOVA to test for the main effect and interaction. Per our preregistered protocol, we also reproduce this model as a secondary analysis here.
+
+```{r}
+summary( aov( lkl ~ load * tempt, data = b[ b$group == "b.similar", ] ) ) 
+```
+
+These results are qualitatively similar to what we saw in the primary model. 
+
+
+# Other Planned Models
+
+The above analyses did not suggest differences in results between similar and dissimilar sites. Therefore, as planned in the preregistered protocol, we did not pursue the secondary mediation models. 
+
 
 
 
