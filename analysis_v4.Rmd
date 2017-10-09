@@ -191,7 +191,6 @@ Palo Alto, CA
 
 * \hl{Put sample sizes for all models and cross-check against df}
 
-* After CRAN updates my package, re-install it to avoid messages
 
 
 
